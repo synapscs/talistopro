@@ -40,7 +40,11 @@ export const OrderDetailsContainer = () => {
                     auditLogs={data.auditLogs}
                 />
             ) : (
-                <OrderDetailsMobile order={data.order} />
+                <OrderDetailsMobile
+                    order={data.order}
+                    workflowConfig={data.workflowConfig}
+                    auditLogs={data.auditLogs}
+                />
             )}
         </div>
     );

@@ -1,7 +1,27 @@
 import { prisma } from '../lib/db';
 import { HTTPException } from 'hono/http-exception';
 import { recordAudit } from '../lib/audit';
+import { whatsapp } from './whatsapp';
 import type { Context } from 'hono';
+
+function replaceMessageVariables(message: string, data: {
+    customerName: string;
+    orderNumber: string;
+    assetInfo: string;
+    assetField4: string;
+    stageName: string;
+    total: string;
+    organizationName: string;
+}): string {
+    return message
+        .replace(/{cliente}/gi, data.customerName)
+        .replace(/{orden}/gi, data.orderNumber)
+        .replace(/{vehiculo}/gi, data.assetInfo)
+        .replace(/{placa}/gi, data.assetField4)
+        .replace(/{etapa}/gi, data.stageName)
+        .replace(/{total}/gi, data.total)
+        .replace(/{taller}/gi, data.organizationName);
+}
 
 export const OrderService = {
     async getOrders(organizationId: string) {
@@ -79,7 +99,6 @@ export const OrderService = {
                     }
                 });
 
-                // Descontar stock para ítems de tipo 'product'
                 if (data.items && data.items.length > 0) {
                     for (const item of data.items) {
                         if (item.type === 'product' && item.productId) {
@@ -88,7 +107,6 @@ export const OrderService = {
                                 data: { stock: { decrement: item.quantity } }
                             });
 
-                            // Auditoría de ajuste de stock (Ejecutada fuera de la tx para no bloquear si falla el audit)
                             await recordAudit(c, 'STOCK_ADJUSTMENT', 'Product', item.productId, {
                                 orderId: order.id,
                                 orderNumber: order.orderNumber,
@@ -109,7 +127,6 @@ export const OrderService = {
 
     async updateOrder(c: Context, organizationId: string, id: string, data: any) {
         try {
-            // Obtener estado anterior para auditoría
             const oldOrder = await prisma.serviceOrder.findUnique({
                 where: { id, organizationId },
                 select: { currentStageId: true, internalNotes: true }
@@ -122,7 +139,7 @@ export const OrderService = {
                 });
                 if (stage) {
                     if (stage.isInitial) statusUpdate = 'RECEIVED';
-                    else if (stage.isFinal) statusUpdate = 'READY'; // Or DELIVERED based on your preference
+                    else if (stage.isFinal) statusUpdate = 'READY';
                     else statusUpdate = 'IN_PROGRESS';
                 }
             }
@@ -142,7 +159,6 @@ export const OrderService = {
                     taxAmount: data.taxAmount,
                     discountAmount: data.discountAmount,
                     total: data.total,
-                    // Actualización de Checklist (reemplazo total para simplicidad)
                     checklist: data.checklist ? {
                         deleteMany: {},
                         create: data.checklist.map((item: any) => ({
@@ -163,16 +179,81 @@ export const OrderService = {
                 }
             });
 
-            // Auditoría de Cambio de Etapa
             if (oldOrder && data.currentStageId && oldOrder.currentStageId !== data.currentStageId) {
                 await recordAudit(c, 'STAGE_CHANGE', 'ServiceOrder', id, {
                     from: oldOrder.currentStageId,
                     to: data.currentStageId,
                     stageName: updatedOrder.currentStage?.name
                 });
+
+                const newStage = await prisma.workflowStage.findUnique({
+                    where: { id: data.currentStageId }
+                });
+
+                if (newStage?.notifyCustomer && updatedOrder.customer) {
+                    const settings = await prisma.organizationSettings.findUnique({
+                        where: { organizationId },
+                        select: {
+                            whatsappEnabled: true,
+                            evolutionInstance: true,
+                        },
+                    });
+
+                    const org = await prisma.organization.findUnique({
+                        where: { id: organizationId },
+                        select: { name: true },
+                    });
+
+                    if (settings?.whatsappEnabled && settings.evolutionInstance) {
+                        const phone = updatedOrder.customer.whatsapp || updatedOrder.customer.phone;
+                        
+                        if (phone) {
+                            const defaultMessage = `Hola {cliente}, te informamos que tu orden #{orden} ha avanzado a la etapa: *{etapa}*.`;
+                            const messageTemplate = newStage.notificationMsg || defaultMessage;
+                            
+                            const message = replaceMessageVariables(messageTemplate, {
+                                customerName: updatedOrder.customer.name,
+                                orderNumber: updatedOrder.orderNumber,
+                                assetInfo: `${updatedOrder.asset?.field1 || ''} ${updatedOrder.asset?.field2 || ''}`.trim(),
+                                assetField4: updatedOrder.asset?.field4 || '',
+                                stageName: newStage.name,
+                                total: `$${Number(updatedOrder.total).toFixed(2)}`,
+                                organizationName: org?.name || 'Taller',
+                            });
+
+                            try {
+                                await whatsapp.sendMessage(phone, message, settings.evolutionInstance);
+
+                                await prisma.notificationLog.create({
+                                    data: {
+                                        type: 'WHATSAPP_AUTO_STAGE',
+                                        recipient: phone,
+                                        message: message,
+                                        status: 'sent',
+                                        organizationId,
+                                    },
+                                });
+
+                                console.log(`[OrderService] WhatsApp notification sent to ${phone} for stage ${newStage.name}`);
+                            } catch (whatsappError) {
+                                console.error('[OrderService] Failed to send WhatsApp notification:', whatsappError);
+                                
+                                await prisma.notificationLog.create({
+                                    data: {
+                                        type: 'WHATSAPP_AUTO_STAGE',
+                                        recipient: phone,
+                                        message: message,
+                                        status: 'failed',
+                                        error: String(whatsappError),
+                                        organizationId,
+                                    },
+                                });
+                            }
+                        }
+                    }
+                }
             }
 
-            // Auditoría de Notas Internas
             if (oldOrder && data.internalNotes && oldOrder.internalNotes !== data.internalNotes) {
                 await recordAudit(c, 'NOTES_UPDATE', 'ServiceOrder', id, {
                     hasNotes: true

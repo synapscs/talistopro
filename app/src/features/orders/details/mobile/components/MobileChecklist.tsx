@@ -11,9 +11,10 @@ interface ChecklistItem {
 interface MobileChecklistProps {
     items: ChecklistItem[];
     onUpdateItem: (id: string, updates: Partial<ChecklistItem>) => void;
+    readOnly?: boolean;
 }
 
-export const MobileChecklist = ({ items, onUpdateItem }: MobileChecklistProps) => {
+export const MobileChecklist = ({ items, onUpdateItem, readOnly = false }: MobileChecklistProps) => {
     // Group items logic could go here if we had category data. 
     // For now, assuming flat list or simple implementation.
 
@@ -36,12 +37,12 @@ export const MobileChecklist = ({ items, onUpdateItem }: MobileChecklistProps) =
                         {getConditionIcon(item.condition)}
                     </div>
 
-                    {/* Condition Selector (Touch Friendly) */}
                     <div className="grid grid-cols-4 gap-2 bg-slate-50 dark:bg-slate-950 p-1 rounded-lg">
                         {(['good', 'regular', 'bad', 'missing'] as const).map((cond) => (
                             <button
                                 key={cond}
-                                onClick={() => onUpdateItem(item.id, { condition: cond })}
+                                onClick={() => !readOnly && onUpdateItem(item.id, { condition: cond })}
+                                disabled={readOnly}
                                 className={`
                                     py-2 rounded-md flex justify-center items-center transition-all
                                     ${item.condition === cond
@@ -51,6 +52,7 @@ export const MobileChecklist = ({ items, onUpdateItem }: MobileChecklistProps) =
                                                     : 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
                                         : 'bg-transparent text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
                                     }
+                                    ${readOnly ? 'cursor-default opacity-70' : 'cursor-pointer'}
                                 `}
                             >
                                 <span className="text-[10px] font-bold uppercase">{cond.slice(0, 3)}</span>

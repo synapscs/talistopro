@@ -824,3 +824,28 @@ export const usePresignUpload = () => {
         },
     });
 };
+
+// -- ORDERS: SEND MESSAGE --
+
+export const useSendOrderMessage = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (data: { orderId: string; message: string; saveToHistory?: boolean }) => {
+            const res = await client.api.orders[':orderId']['send-message'].$post({
+                param: { orderId: data.orderId },
+                json: {
+                    message: data.message,
+                    saveToHistory: data.saveToHistory ?? true,
+                },
+            });
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error((error as any).message || 'Error al enviar mensaje');
+            }
+            return await res.json();
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['order-detail', variables.orderId] });
+        },
+    });
+};
