@@ -20,7 +20,7 @@ export const OrderItemsTable: React.FC<OrderItemsTableProps> = ({ items }) => {
 
     if (!items || items.length === 0) {
         return (
-            <div className="bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 p-12 text-center">
+            <div className="bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-12 text-center">
                 <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-700">
                     <Package className="text-slate-300" size={32} />
                 </div>
@@ -30,7 +30,7 @@ export const OrderItemsTable: React.FC<OrderItemsTableProps> = ({ items }) => {
     }
 
     return (
-        <div className="overflow-hidden border border-slate-100 dark:border-slate-800 rounded-[32px] bg-white dark:bg-slate-900 shadow-sm">
+        <div className="overflow-hidden border border-slate-100 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 shadow-sm">
             <table className="w-full text-left border-collapse">
                 <thead>
                     <tr className="bg-slate-100/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400">

@@ -1,8 +1,9 @@
 import React from 'react';
-import { Car, FileText, CheckSquare, Image as ImageIcon, Save, StickyNote, Plus, Trash2, Camera, Loader2, Wrench, MoreHorizontal } from 'lucide-react';
+import { Car, FileText, CheckSquare, Image as ImageIcon, Save, StickyNote, Plus, Trash2, Camera, Loader2, Wrench, Lock } from 'lucide-react';
 import { DesktopFinancialSidebar } from './components/DesktopFinancialSidebar';
 import { DesktopAuditLog } from './components/DesktopAuditLog';
 import { QuickAddItem } from './components/QuickAddItem';
+import { DesktopChecklist } from '../components/DesktopChecklist';
 import { OrderFull } from '../../../../types/api';
 import { WorkflowStepper } from '../components/WorkflowStepper';
 import { OrderItemsTable } from '../../components/desktop/OrderItemsTable';
@@ -81,15 +82,11 @@ export const OrderDetailsDesktop = ({ order, workflowConfig, auditLogs }: OrderD
         });
     };
 
-    const handleToggleChecklist = (item: any) => {
+    const handleUpdateChecklistItem = (itemId: string, updates: any) => {
         if (!isInitialStage) return;
 
-        const conditions = ['good', 'bad', 'regular'];
-        const currentIndex = conditions.indexOf(item.condition || 'good');
-        const nextCondition = conditions[(currentIndex + 1) % conditions.length];
-
         const updatedChecklist = (order.checklist || []).map((cl: any) =>
-            cl.id === item.id ? { ...cl, condition: nextCondition } : cl
+            cl.id === itemId ? { ...cl, ...updates } : cl
         );
 
         updateOrder.mutate({
@@ -161,7 +158,7 @@ export const OrderDetailsDesktop = ({ order, workflowConfig, auditLogs }: OrderD
             />
 
             <div className="p-8 max-w-[1600px] mx-auto space-y-8">
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] px-12 py-4 shadow-sm">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-12 py-4 shadow-sm">
                     <WorkflowStepper stages={workflowConfig} currentStageId={order.currentStageId} />
                 </div>
 
@@ -202,7 +199,7 @@ export const OrderDetailsDesktop = ({ order, workflowConfig, auditLogs }: OrderD
                             </div>
                         </div>
 
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-8 shadow-sm relative overflow-hidden">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 shadow-sm relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/5 blur-3xl rounded-full -mr-16 -mt-16"></div>
                             <div className="flex items-center justify-between mb-6">
                                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center">
@@ -254,42 +251,20 @@ export const OrderDetailsDesktop = ({ order, workflowConfig, auditLogs }: OrderD
                             <div className="flex items-center justify-between mb-6">
                                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center">
                                     <CheckSquare size={14} className="mr-2" />
-                                    {term.checkLabel}
+                                    Checklist
                                 </h3>
                                 {!isInitialStage && (
-                                    <span className="text-[10px] font-black text-slate-400 bg-slate-50 dark:bg-slate-950 px-2 py-1 rounded border border-slate-100 dark:border-slate-800 uppercase tracking-tighter">Historial Bloqueado</span>
+                                    <span className="flex items-center space-x-1 text-[10px] font-black text-slate-400 bg-slate-50 dark:bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-800 uppercase tracking-tighter">
+                                        <Lock size={10} />
+                                        <span>Bloqueado</span>
+                                    </span>
                                 )}
                             </div>
-                            <div className="grid grid-cols-3 gap-4">
-                                {order.checklist?.map((item: any) => (
-                                    <div key={item.id} className="flex justify-between items-center p-3 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors">
-                                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{item.item}</span>
-                                        <div className="flex items-center space-x-2">
-                                            <button
-                                                disabled={!isInitialStage || updateOrder.isPending}
-                                                onClick={() => handleToggleChecklist(item)}
-                                                className={`
-                                                    text-[10px] font-black uppercase px-2 py-0.5 rounded-md transition-all
-                                                    ${item.condition === 'good' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                                                        item.condition === 'bad' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                                                            'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'}
-                                                    ${isInitialStage ? 'cursor-pointer hover:ring-2 hover:ring-primary-500/30 active:scale-95' : 'cursor-default opacity-80'}
-                                                `}
-                                            >
-                                                {item.condition === 'good' ? 'Bien' : item.condition === 'bad' ? 'Mal' : 'Regular'}
-                                            </button>
-                                            {isInitialStage && (
-                                                <button className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition-colors">
-                                                    <MoreHorizontal size={14} className="text-slate-400" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                                {(!order.checklist || order.checklist.length === 0) && (
-                                    <p className="col-span-3 text-center text-sm text-slate-400 italic py-4">Sin elementos en el checklist.</p>
-                                )}
-                            </div>
+                            <DesktopChecklist
+                                items={order.checklist || []}
+                                onUpdateItem={handleUpdateChecklistItem}
+                                readOnly={!isInitialStage}
+                            />
                         </div>
 
                         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6">
@@ -346,7 +321,7 @@ export const OrderDetailsDesktop = ({ order, workflowConfig, auditLogs }: OrderD
                     </div>
 
                     <div className="col-span-12 lg:col-span-4 space-y-8">
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] p-6 shadow-sm">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center">
                                     <StickyNote size={14} className="mr-2 text-primary-500" />
