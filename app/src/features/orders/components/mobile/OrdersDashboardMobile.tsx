@@ -59,7 +59,13 @@ export const OrdersDashboardMobile: React.FC<OrdersDashboardMobileProps> = ({
 
     return (
         <div className="flex flex-col space-y-4 px-4 pb-20">
-            {/* 1. Mobile Search & Quick Filters */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white truncate">{orderPlural}</h1>
+                    <p className="text-slate-500 dark:text-slate-400">Gestiona y monitorea tus servicios.</p>
+                </div>
+            </div>
+            {/* Mobile Search & Quick Filters */}
             <div className="sticky top-[72px] z-30 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-sm py-2 -mx-4 px-4 space-y-3">
                 <div className="relative">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />

@@ -56,12 +56,11 @@ export const CustomerList = () => {
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-            {/* Header / Toolbar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Clientes</h1>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Base de datos maestra y gestión de activos.</p>
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white truncate">Clientes</h1>
+                    <p className="text-slate-500 dark:text-slate-400">Base de datos maestra y gestión de activos.</p>
                 </div>
 
                 <div className="flex items-center gap-4">

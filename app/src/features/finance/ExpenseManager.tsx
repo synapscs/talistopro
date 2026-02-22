@@ -53,9 +53,9 @@ export const ExpenseManager = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Control de Gastos</h1>
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white truncate">Gastos y Proveedores</h1>
                     <p className="text-slate-500 dark:text-slate-400">Gestiona tus egresos operativos y proveedores.</p>
                 </div>
                 <div className="flex items-center space-x-3">
