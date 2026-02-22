@@ -22,7 +22,7 @@ export interface NavItem {
 }
 
 export const getNavigationConfig = (terminology: TerminologyPreset, orgSlug: string): NavItem[] => {
-    const { partPlural, orderPlural } = terminology;
+    const { partPlural, orderPlural, assetPlural } = terminology;
 
     return [
         {
@@ -50,6 +50,13 @@ export const getNavigationConfig = (terminology: TerminologyPreset, orgSlug: str
             id: 'inventory',
             title: partPlural || 'Insumos',
             href: `/${orgSlug}/dashboard/inventory`,
+            icon: Package,
+            platforms: ['desktop', 'mobile']
+        },
+        {
+            id: 'assets',
+            title: assetPlural || 'Activos',
+            href: `/${orgSlug}/dashboard/assets`,
             icon: Package,
             platforms: ['desktop', 'mobile']
         },

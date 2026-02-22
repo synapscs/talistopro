@@ -15,11 +15,15 @@ export const AssetService = {
 
     async createAsset(organizationId: string, data: any) {
         try {
+            const payload = {
+                ...data,
+                organizationId,
+                nextAppointmentAt: data.nextAppointmentAt ? new Date(data.nextAppointmentAt) : undefined,
+            };
+            // Elimina campos undefined para evitar overrides no deseados
+            Object.keys(payload).forEach((k) => (payload as any)[k] === undefined && delete (payload as any)[k]);
             return await prisma.asset.create({
-                data: {
-                    ...data,
-                    organizationId,
-                }
+                data: payload
             });
         } catch (error) {
             throw new HTTPException(500, { message: 'Failed to create asset' });
@@ -28,11 +32,17 @@ export const AssetService = {
 
     async updateAsset(organizationId: string, id: string, data: any) {
         try {
+            const payload = {
+                ...data,
+            };
+            if (payload.nextAppointmentAt) {
+                payload.nextAppointmentAt = new Date(payload.nextAppointmentAt);
+            }
+            // Remove undefined values to avoid accidental null overwrites
+            Object.keys(payload).forEach((k) => (payload as any)[k] === undefined && delete (payload as any)[k]);
             return await prisma.asset.update({
                 where: { id, organizationId },
-                data: {
-                    ...data
-                }
+                data: payload
             });
         } catch (error) {
             throw new HTTPException(500, { message: 'Failed to update asset' });

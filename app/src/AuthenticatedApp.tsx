@@ -4,6 +4,7 @@ import { useNavigationStore, AppView } from './stores/useNavigationStore';
 import { authClient } from './lib/auth-client';
 import { AppLayout } from './components/layout/AppLayout';
 import { Dashboard } from './pages/Dashboard';
+import { AssetsPage } from './features/assets/AssetsPage';
 import { CustomerList } from './features/customers/CustomerList';
 import { OrdersDashboard } from './features/orders/OrdersDashboard';
 import { AutomotiveChecklist } from './features/orders/AutomotiveChecklist';
@@ -160,6 +161,7 @@ export const AuthenticatedApp = () => {
                         <Route path="orders/:orderId" element={<OrderDetailContainer />} />
                         <Route path="checklist" element={<AutomotiveChecklist />} />
                         <Route path="inventory" element={<InventoryManager />} />
+                        <Route path="assets" element={<AssetsPage />} />
                         <Route path="services" element={<ServiceCatalog />} />
                         <Route path="appointments" element={<AppointmentManager />} />
                         <Route path="billing" element={<InvoicingModule />} />
