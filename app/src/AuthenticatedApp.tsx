@@ -107,13 +107,26 @@ export const AuthenticatedApp = () => {
 
     // Sincronizar useNavigationStore con la URL
     useEffect(() => {
-        const pathSegments = location.pathname.split('/');
-        const path = pathSegments.pop() || 'dashboard';
+        const pathSegments = location.pathname.split('/').filter(Boolean);
         const validViews: AppView[] = ['dashboard', 'customers', 'orders', 'checklist', 'inventory', 'services', 'appointments', 'billing', 'expenses', 'integrations', 'style', 'settings', 'assets'];
 
-        // Si el ultimo segmento es el slug o dashboard, asumimos view 'dashboard'
-        const currentView = validViews.includes(path as AppView) ? path : 'dashboard';
-        setView(currentView as AppView);
+        // Detectar patrones especiales como /orders/:orderId
+        let currentView: AppView = 'dashboard';
+        
+        if (pathSegments.includes('orders')) {
+            // Si la URL contiene 'orders' en cualquier parte, la vista es 'orders'
+            currentView = 'orders';
+        } else {
+            // Para otras rutas, tomar el último segmento válido
+            for (let i = pathSegments.length - 1; i >= 0; i--) {
+                if (validViews.includes(pathSegments[i] as AppView)) {
+                    currentView = pathSegments[i] as AppView;
+                    break;
+                }
+            }
+        }
+        
+        setView(currentView);
     }, [location.pathname, setView]);
 
 

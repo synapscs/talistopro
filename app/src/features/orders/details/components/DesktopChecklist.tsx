@@ -102,7 +102,7 @@ export const DesktopChecklist: React.FC<DesktopChecklistProps> = ({ items, onUpd
                                         )}
                                     </div>
 
-                                    <div className="flex items-center space-x-2">
+                                    <div className="grid grid-cols-4 gap-2">
                                         {conditions.map((cond) => {
                                             const Icon = cond.icon;
                                             const isActive = item.condition === cond.value;
@@ -113,16 +113,16 @@ export const DesktopChecklist: React.FC<DesktopChecklistProps> = ({ items, onUpd
                                                     onClick={() => handleConditionChange(item.id, cond.value)}
                                                     disabled={readOnly}
                                                     className={`
-                                                        p-2 rounded-lg transition-all flex items-center justify-center
+                                                        py-2 px-3 rounded-lg transition-all flex items-center justify-center space-x-1.5
                                                         ${isActive 
                                                             ? cond.activeColor 
                                                             : `${cond.bgColor} ${cond.color} hover:opacity-80`
                                                         }
                                                         ${readOnly ? 'cursor-default opacity-60' : 'cursor-pointer hover:scale-105 active:scale-95'}
                                                     `}
-                                                    title={cond.label}
                                                 >
-                                                    <Icon size={16} strokeWidth={isActive ? 2.5 : 2} />
+                                                    <Icon size={14} strokeWidth={isActive ? 2.5 : 2} />
+                                                    <span className="text-[10px] font-bold uppercase">{cond.label}</span>
                                                 </button>
                                             );
                                         })}
