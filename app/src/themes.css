@@ -1,0 +1,214 @@
+/* Definiciones de Temas - TaListoPro Design System */
+
+:root {
+    /* Obsidian Original (Indigo + Slate) */
+    --obsidian-brand-50: #eef2ff;
+    --obsidian-brand-100: #e0e7ff;
+    --obsidian-brand-200: #c7d2fe;
+    --obsidian-brand-300: #a5b4fc;
+    --obsidian-brand-400: #818cf8;
+    --obsidian-brand-500: #6366f1;
+    --obsidian-brand-600: #4f46e5;
+    --obsidian-brand-700: #4338ca;
+    --obsidian-brand-800: #3730ae;
+    --obsidian-brand-900: #312e81;
+    --obsidian-brand-950: #1e1b4b;
+
+    --obsidian-surface-50: #f8fafc;
+    --obsidian-surface-100: #f1f5f9;
+    --obsidian-surface-200: #e2e8f0;
+    --obsidian-surface-300: #cbd5e1;
+    --obsidian-surface-400: #94a3b8;
+    --obsidian-surface-500: #64748b;
+    --obsidian-surface-600: #475569;
+    --obsidian-surface-700: #334155;
+    --obsidian-surface-800: #1e293b;
+    --obsidian-surface-900: #0f172a;
+    --obsidian-surface-950: #020617;
+
+    /* Emerald Elite (Emerald + Zinc) - Refinado: Verde más oscuro */
+    --emerald-brand-50: #ecfdf5;
+    --emerald-brand-100: #d1fae5;
+    --emerald-brand-200: #a7f3d0;
+    --emerald-brand-300: #6ee7b7;
+    --emerald-brand-400: #10b981;
+    --emerald-brand-500: #059669;
+    /* Base oscurecida */
+    --emerald-brand-600: #047857;
+    --emerald-brand-700: #065f46;
+    --emerald-brand-800: #064e3b;
+    --emerald-brand-900: #022c22;
+    --emerald-brand-950: #011c15;
+
+    --emerald-surface-50: #fafafa;
+    --emerald-surface-100: #f4f4f5;
+    --emerald-surface-200: #e4e4e7;
+    --emerald-surface-300: #d4d4d8;
+    --emerald-surface-400: #a1a1aa;
+    --emerald-surface-500: #71717a;
+    --emerald-surface-600: #52525b;
+    --emerald-surface-700: #3f3f46;
+    --emerald-surface-800: #27272a;
+    --emerald-surface-900: #18181b;
+    --emerald-surface-950: #09090b;
+
+    /* Industrial Gray (Zinc + Slate) - Nuevo Estilo Industrial (Darker) */
+    --industrial-brand-50: #f1f5f9;
+    --industrial-brand-100: #e2e8f0;
+    --industrial-brand-200: #cbd5e1;
+    --industrial-brand-300: #94a3b8;
+    --industrial-brand-400: #64748b;
+    --industrial-brand-500: #475569;
+    /* Gris Industrial Base - Oscurecido */
+    --industrial-brand-600: #334155;
+    --industrial-brand-700: #1e293b;
+    --industrial-brand-800: #0f172a;
+    --industrial-brand-900: #020617;
+    --industrial-brand-950: #010413;
+
+    /* Ruby Professional (Rose + Zinc) - Refinado: Rojo elegante y vivo */
+    --ruby-brand-50: #fff1f2;
+    --ruby-brand-100: #ffe4e6;
+    --ruby-brand-200: #fecdd3;
+    --ruby-brand-300: #fda4af;
+    --ruby-brand-400: #fb7185;
+    --ruby-brand-500: #e11d48;
+    /* Rojo más vivo y elegante */
+    --ruby-brand-600: #be123c;
+    --ruby-brand-700: #9f1239;
+    --ruby-brand-800: #881337;
+    --ruby-brand-900: #4c0519;
+    --ruby-brand-950: #27030c;
+}
+
+/* Tokens Semánticos (Default: Obsidian) */
+:root {
+    --brand-50: var(--obsidian-brand-50);
+    --brand-100: var(--obsidian-brand-100);
+    --brand-200: var(--obsidian-brand-200);
+    --brand-300: var(--obsidian-brand-300);
+    --brand-400: var(--obsidian-brand-400);
+    --brand-500: var(--obsidian-brand-500);
+    --brand-600: var(--obsidian-brand-600);
+    --brand-700: var(--obsidian-brand-700);
+    --brand-800: var(--obsidian-brand-800);
+    --brand-900: var(--obsidian-brand-900);
+    --brand-950: var(--obsidian-brand-950);
+
+    --surface-50: var(--obsidian-surface-50);
+    --surface-100: var(--obsidian-surface-100);
+    --surface-200: var(--obsidian-surface-200);
+    --surface-300: var(--obsidian-surface-300);
+    --surface-400: var(--obsidian-surface-400);
+    --surface-500: var(--obsidian-surface-500);
+    --surface-600: var(--obsidian-surface-600);
+    --surface-700: var(--obsidian-surface-700);
+    --surface-800: var(--obsidian-surface-800);
+    --surface-900: var(--obsidian-surface-900);
+    --surface-950: var(--obsidian-surface-950);
+}
+
+/* Clases de Tema */
+.theme-obsidian {
+    --brand-50: var(--obsidian-brand-50);
+    --brand-100: var(--obsidian-brand-100);
+    --brand-200: var(--obsidian-brand-200);
+    --brand-300: var(--obsidian-brand-300);
+    --brand-400: var(--obsidian-brand-400);
+    --brand-500: var(--obsidian-brand-500);
+    --brand-600: var(--obsidian-brand-600);
+    --brand-700: var(--obsidian-brand-700);
+    --brand-800: var(--obsidian-brand-800);
+    --brand-900: var(--obsidian-brand-900);
+    --brand-950: var(--obsidian-brand-950);
+
+    --surface-50: var(--obsidian-surface-50);
+    --surface-100: var(--obsidian-surface-100);
+    --surface-200: var(--obsidian-surface-200);
+    --surface-300: var(--obsidian-surface-300);
+    --surface-400: var(--obsidian-surface-400);
+    --surface-500: var(--obsidian-surface-500);
+    --surface-600: var(--obsidian-surface-600);
+    --surface-700: var(--obsidian-surface-700);
+    --surface-800: var(--obsidian-surface-800);
+    --surface-900: var(--obsidian-surface-900);
+    --surface-950: var(--obsidian-surface-950);
+}
+
+.theme-emerald {
+    --brand-50: var(--emerald-brand-50);
+    --brand-100: var(--emerald-brand-100);
+    --brand-200: var(--emerald-brand-200);
+    --brand-300: var(--emerald-brand-300);
+    --brand-400: var(--emerald-brand-400);
+    --brand-500: var(--emerald-brand-500);
+    --brand-600: var(--emerald-brand-600);
+    --brand-700: var(--emerald-brand-700);
+    --brand-800: var(--emerald-brand-800);
+    --brand-900: var(--emerald-brand-900);
+    --brand-950: var(--emerald-brand-950);
+
+    --surface-50: var(--emerald-surface-50);
+    --surface-100: var(--emerald-surface-100);
+    --surface-200: var(--emerald-surface-200);
+    --surface-300: var(--emerald-surface-300);
+    --surface-400: var(--emerald-surface-400);
+    --surface-500: var(--emerald-surface-500);
+    --surface-600: var(--emerald-surface-600);
+    --surface-700: var(--emerald-surface-700);
+    --surface-800: var(--emerald-surface-800);
+    --surface-900: var(--emerald-surface-900);
+    --surface-950: var(--emerald-surface-950);
+}
+
+.theme-industrial {
+    --brand-50: var(--industrial-brand-50);
+    --brand-100: var(--industrial-brand-100);
+    --brand-200: var(--industrial-brand-200);
+    --brand-300: var(--industrial-brand-300);
+    --brand-400: var(--industrial-brand-400);
+    --brand-500: var(--industrial-brand-500);
+    --brand-600: var(--industrial-brand-600);
+    --brand-700: var(--industrial-brand-700);
+    --brand-800: var(--industrial-brand-800);
+    --brand-900: var(--industrial-brand-900);
+    --brand-950: var(--industrial-brand-950);
+
+    --surface-50: var(--obsidian-surface-50);
+    --surface-100: var(--obsidian-surface-100);
+    --surface-200: var(--obsidian-surface-200);
+    --surface-300: var(--obsidian-surface-300);
+    --surface-400: var(--obsidian-surface-400);
+    --surface-500: var(--obsidian-surface-500);
+    --surface-600: var(--obsidian-surface-600);
+    --surface-700: var(--obsidian-surface-700);
+    --surface-800: var(--obsidian-surface-800);
+    --surface-900: var(--obsidian-surface-900);
+    --surface-950: var(--obsidian-surface-950);
+}
+
+.theme-ruby {
+    --brand-50: var(--ruby-brand-50);
+    --brand-100: var(--ruby-brand-100);
+    --brand-200: var(--ruby-brand-200);
+    --brand-300: var(--ruby-brand-300);
+    --brand-400: var(--ruby-brand-400);
+    --brand-500: var(--ruby-brand-500);
+    --brand-600: var(--ruby-brand-600);
+    --brand-700: var(--ruby-brand-700);
+    --brand-800: var(--ruby-brand-800);
+    --brand-900: var(--ruby-brand-900);
+    --brand-950: var(--ruby-brand-950);
+
+    --surface-50: var(--emerald-surface-50);
+    --surface-100: var(--emerald-surface-100);
+    --surface-200: var(--emerald-surface-200);
+    --surface-300: var(--emerald-surface-300);
+    --surface-400: var(--emerald-surface-400);
+    --surface-500: var(--emerald-surface-500);
+    --surface-600: var(--emerald-surface-600);
+    --surface-700: var(--emerald-surface-700);
+    --surface-800: var(--emerald-surface-800);
+    --surface-900: var(--emerald-surface-900);
+    --surface-950: var(--emerald-surface-950);
+}

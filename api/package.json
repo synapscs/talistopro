@@ -1,0 +1,35 @@
+{
+    "name": "api",
+    "version": "1.0.0",
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "scripts": {
+        "dev": "tsx watch src/index.ts",
+        "build": "tsc",
+        "start": "node dist/index.js"
+    },
+    "dependencies": {
+        "@aws-sdk/client-s3": "^3.990.0",
+        "@aws-sdk/s3-request-presigner": "^3.990.0",
+        "@hono/node-server": "1.8.2",
+        "@hono/zod-openapi": "^1.2.2",
+        "@hono/zod-validator": "^0.7.6",
+        "@prisma/client": "^5.22.0",
+        "@scalar/hono-api-reference": "^0.9.41",
+        "better-auth": "^1.4.18",
+        "dotenv": "^17.3.1",
+        "hono": "^4.11.9",
+        "zod": "3.25.76",
+        "zod-openapi": "^5.4.6"
+    },
+    "devDependencies": {
+        "@types/node": "20.11.20",
+        "prisma": "^5.22.0",
+        "tsx": "4.7.1",
+        "typescript": "5.3.3"
+    }
+}

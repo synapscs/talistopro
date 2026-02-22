@@ -1,0 +1,903 @@
+// ==========================================
+// TALISTOPRO - SCHEMA DE BASE DE DATOS (PROD)
+// ==========================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// ENUMS
+// ==========================================
+
+enum BusinessType {
+  AUTOMOTIVE // Mecánica Automotriz
+  ELECTRONICS // Electrónica
+  MANUFACTURING // Manufactura
+  OTHER // Otros
+}
+
+enum Country {
+  VE // Venezuela
+  CO // Colombia
+  MX // México
+  OT // Otros
+}
+
+enum Currency {
+  USD // Dólar Americano
+  VES // Bolívar Venezolano
+  COP // Peso Colombiano
+  MXN // Peso Mexicano
+}
+
+enum OrderStatus {
+  RECEIVED // Recibido
+  DIAGNOSED // Diagnosticado
+  QUOTED // Cotizado
+  APPROVED // Aprobado
+  IN_PROGRESS // En Progreso
+  QUALITY_CHECK // Control de Calidad
+  READY // Listo
+  DELIVERED // Entregado
+  CANCELLED // Cancelado
+}
+
+enum AppointmentStatus {
+  SCHEDULED // Programada
+  CONFIRMED // Confirmada
+  IN_PROGRESS // En Curso
+  COMPLETED // Completada
+  CANCELLED // Cancelada
+  NO_SHOW // No Asistió
+}
+
+enum PaymentStatus {
+  PENDING // Pendiente
+  PARTIAL // Parcial
+  PAID // Pagado
+  REFUNDED // Reembolsado
+}
+
+enum PaymentMethod {
+  CASH // Efectivo
+  CARD // Tarjeta
+  TRANSFER // Transferencia
+  MOBILE_PAYMENT // Pago Móvil
+  ZELLE // Zelle
+  OTHER // Otro
+}
+
+// ==========================================
+// TENANT (ORGANIZACIÓN)
+// ==========================================
+
+model Organization {
+  id                String       @id @default(uuid(7))
+  name              String
+  slug              String       @unique
+  businessType      BusinessType @default(OTHER) @map("business_type")
+  country           Country      @default(VE)
+  primaryCurrency   Currency     @default(USD) @map("primary_currency")
+  secondaryCurrency Currency?    @map("secondary_currency") // Moneda local (VES, etc)
+  timezone          String       @default("America/Caracas")
+
+  // Better-Auth Required
+  metadata String?
+  logo     String?
+
+  // Configuración Visual
+  primaryColor String @default("#6366F1") @map("primary_color")
+  themeKey     String @default("obsidian") @map("theme_key")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  settings         OrganizationSettings?
+  members          Member[]
+  invitations      Invitation[]
+  customers        Customer[]
+  assets           Asset[]
+  serviceOrders    ServiceOrder[]
+  products         Product[]
+  services         Service[]
+  categories       Category[]
+  workflowStages   WorkflowStage[]
+  appointments     Appointment[]
+  invoices         Invoice[]
+  expenses         Expense[]
+  suppliers        Supplier[]
+  webhookLogs      WebhookLog[]
+  notificationLogs NotificationLog[]
+  auditLogs        AuditLog[]
+
+  @@map("organizations")
+}
+
+model OrganizationSettings {
+  id             String       @id @default(uuid(7))
+  organizationId String       @unique @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Datos Fiscales y Contacto
+  tradeName      String? @map("trade_name") // Nombre Comercial / Razón Social
+  taxId          String? @map("tax_id") // RIF, NIT, RFC
+  taxRegime      String? @map("tax_regime") // Contribuyente Especial, etc.
+  address        String?
+  phoneNumber    String? @map("phone_number")
+  whatsappNumber String? @map("whatsapp_number")
+  email          String?
+
+  // Lógica Financiera y Tax
+  taxRate            Decimal   @default(16.00) @map("tax_rate") @db.Decimal(10, 2)
+  taxName            String    @default("IVA") @map("tax_name")
+  biCurrencyEnabled  Boolean   @default(false) @map("bi_currency_enabled")
+  exchangeInverted   Boolean   @default(false) @map("exchange_inverted")
+  exchangeRate       Decimal?  @map("exchange_rate") @db.Decimal(10, 2)
+  exchangeRateDate   DateTime? @map("exchange_rate_date")
+  exchangeRateSource String?   @default("CUSTOM") @map("exchange_rate_source")
+  autoUpdateRate     Boolean   @default(false) @map("auto_update_rate")
+
+  // WhatsApp e Integraciones
+  whatsappEnabled   Boolean @default(false) @map("whatsapp_enabled")
+  evolutionInstance String? @map("evolution_instance")
+  evolutionApiKey   String? @map("evolution_api_key")
+  evolutionApiToken String? @map("evolution_api_token")
+
+  // Plantillas de Notificación
+  bookingReminderMsg     String? @map("booking_reminder_msg")
+  bookingReminderEnabled Boolean @default(true) @map("booking_reminder_enabled")
+  pendingPaymentMsg      String? @map("pending_payment_msg")
+  pendingPaymentEnabled  Boolean @default(true) @map("pending_payment_enabled")
+
+  // Terminología Dinámica (Glossary)
+  // { "item": "Vehículo", "items": "Vehículos", "brand": "Marca", ... }
+  customTerminology Json? @map("custom_terminology")
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("organization_settings")
+}
+
+model WebhookLog {
+  id             String       @id @default(uuid(7))
+  event          String
+  payload        Json
+  status         Int
+  response       String?
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  @@map("webhook_logs")
+}
+
+model NotificationLog {
+  id             String       @id @default(uuid(7))
+  type           String
+  recipient      String
+  message        String
+  status         String
+  error          String?
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  @@map("notification_logs")
+}
+
+// ==========================================
+// USUARIOS Y MIEMBROS
+// ==========================================
+
+model User {
+  id            String  @id // Better-Auth ID
+  email         String  @unique
+  name          String
+  image         String? @map("image")
+  emailVerified Boolean @default(false) @map("email_verified")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  memberships Member[]
+  sessions    Session[]
+  accounts    Account[]
+  invitations Invitation[]
+  auditLogs   AuditLog[]
+
+  @@map("users")
+}
+
+model Member {
+  id   String @id @default(uuid(7))
+  role String @default("technician") // owner, admin, technician, receptionist
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  metadata  String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Órdenes asignadas
+  assignedOrders ServiceOrder[]
+
+  @@unique([userId, organizationId])
+  @@map("members")
+}
+
+model Invitation {
+  id             String       @id
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  role           String?
+  status         String
+  expiresAt      DateTime     @map("expires_at")
+  inviterId      String       @map("inviter_id")
+  user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("invitations")
+}
+
+model Session {
+  id        String   @id
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  activeOrganizationId String? @map("active_organization_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  userId                String    @map("user_id")
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  scope                 String?
+  password              String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([providerId, accountId])
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("verifications")
+}
+
+// ==========================================
+// CLIENTES
+// ==========================================
+
+model Customer {
+  id String @id @default(uuid(7))
+
+  // Datos básicos
+  name     String
+  email    String?
+  phone    String
+  whatsapp String? // Puede ser diferente al teléfono
+
+  // Identificación
+  documentType   String? @map("document_type") // CI, RIF, NIT, RFC
+  documentNumber String? @map("document_number")
+
+  // Dirección
+  address String?
+  city    String?
+  state   String?
+
+  // Notas
+  notes String?
+
+  // Preferencias de notificación
+  notifyWhatsapp Boolean @default(true) @map("notify_whatsapp")
+  notifyEmail    Boolean @default(false) @map("notify_email")
+
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  assets        Asset[]
+  serviceOrders ServiceOrder[]
+  appointments  Appointment[]
+  invoices      Invoice[]
+
+  @@index([organizationId, phone])
+  @@map("customers")
+}
+
+// ==========================================
+// ACTIVOS (VEHÍCULO/EQUIPO - MAX 6 CAMPOS)
+// ==========================================
+
+model Asset {
+  id String @id @default(uuid(7))
+
+  // 6 Campos dinámicos según rubro
+  field1 String  @map("field_1") // Marca / Brand
+  field2 String  @map("field_2") // Modelo / Model
+  field3 String? @map("field_3") // Año / Serial / Capacidad
+  field4 String? @map("field_4") // Placa / IMEI / Código
+  field5 String? @map("field_5") // Color / Especificación
+  field6 String? @map("field_6") // Kilometraje / Observación
+
+  // Foto del activo
+  photoUrl String? @map("photo_url")
+
+  // Notas adicionales
+  notes String?
+
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  serviceOrders ServiceOrder[]
+
+  @@index([organizationId, customerId])
+  @@map("assets")
+}
+
+// ==========================================
+// ETAPAS DE FLUJO DE TRABAJO
+// ==========================================
+
+model WorkflowStage {
+  id          String  @id @default(uuid(7))
+  name        String
+  description String?
+  order       Int
+  color       String  @default("#6366F1")
+  icon        String?
+
+  // Notificación
+  notifyCustomer  Boolean @default(false) @map("notify_customer")
+  notificationMsg String? @map("notification_msg") // Mensaje personalizado
+
+  // Configuración
+  isInitial        Boolean @default(false) @map("is_initial")
+  isFinal          Boolean @default(false) @map("is_final")
+  requiresApproval Boolean @default(false) @map("requires_approval")
+
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relaciones
+  serviceOrders ServiceOrder[]
+
+  @@unique([organizationId, order])
+  @@map("workflow_stages")
+}
+
+// ==========================================
+// ORDEN DE SERVICIO
+// ==========================================
+
+model ServiceOrder {
+  id          String @id @default(uuid(7))
+  orderNumber String @map("order_number") // Formato: OS-2024-0001
+
+  // Estado
+  status         OrderStatus    @default(RECEIVED)
+  currentStageId String?        @map("current_stage_id")
+  currentStage   WorkflowStage? @relation(fields: [currentStageId], references: [id])
+
+  // Descripción del problema/servicio
+  description   String
+  diagnosis     String?
+  internalNotes String? @map("internal_notes")
+
+  // Fechas estimadas
+  estimatedDate DateTime? @map("estimated_date")
+  deliveryDate  DateTime? @map("delivery_date")
+
+  // Prioridad
+  priority Int @default(2) // 1: Urgente, 2: Normal, 3: Baja
+
+  // Cliente y Activo
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  assetId String @map("asset_id")
+  asset   Asset  @relation(fields: [assetId], references: [id])
+
+  // Técnico asignado
+  assignedToId String? @map("assigned_to_id")
+  assignedTo   Member? @relation(fields: [assignedToId], references: [id])
+
+  // Organización
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Totales (en moneda base USD)
+  subtotal       Decimal @default(0) @db.Decimal(10, 2)
+  taxAmount      Decimal @default(0) @map("tax_amount") @db.Decimal(10, 2)
+  discountAmount Decimal @default(0) @map("discount_amount") @db.Decimal(10, 2)
+  total          Decimal @default(0) @db.Decimal(10, 2)
+
+  // Pago
+  paymentStatus PaymentStatus @default(PENDING) @map("payment_status")
+  amountPaid    Decimal       @default(0) @map("amount_paid") @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  items         OrderItem[]
+  photos        OrderPhoto[]
+  checklist     ChecklistItem[]
+  statusHistory StatusHistory[]
+  payments      Payment[]
+  invoice       Invoice?
+
+  @@unique([organizationId, orderNumber])
+  @@index([organizationId, status])
+  @@index([organizationId, customerId])
+  @@map("service_orders")
+}
+
+// ==========================================
+// ITEMS DE ORDEN (PRODUCTOS Y SERVICIOS)
+// ==========================================
+
+model OrderItem {
+  id String @id @default(uuid(7))
+
+  type        String // "product" | "service"
+  name        String
+  description String?
+
+  quantity  Decimal @default(1) @db.Decimal(10, 2)
+  unitPrice Decimal @map("unit_price") @db.Decimal(10, 2) // Precio en USD
+  discount  Decimal @default(0) @db.Decimal(10, 2) // Porcentaje
+  total     Decimal @db.Decimal(10, 2)
+
+  // Referencias opcionales
+  productId String?  @map("product_id")
+  product   Product? @relation(fields: [productId], references: [id])
+
+  serviceId String?  @map("service_id")
+  service   Service? @relation(fields: [serviceId], references: [id])
+
+  serviceOrderId String       @map("service_order_id")
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("order_items")
+}
+
+// ==========================================
+// FOTOS DE ORDEN (MAX 6)
+// ==========================================
+
+model OrderPhoto {
+  id String @id @default(uuid(7))
+
+  url     String
+  type    String // "entry" | "process" | "exit"
+  caption String?
+  order   Int     @default(0)
+
+  serviceOrderId String       @map("service_order_id")
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("order_photos")
+}
+
+// ==========================================
+// HISTORIAL DE ESTADOS
+// ==========================================
+
+model StatusHistory {
+  id String @id @default(uuid(7))
+
+  fromStatus OrderStatus? @map("from_status")
+  toStatus   OrderStatus  @map("to_status")
+  notes      String?
+
+  // Notificación enviada
+  notified   Boolean   @default(false)
+  notifiedAt DateTime? @map("notified_at")
+
+  serviceOrderId String       @map("service_order_id")
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("status_history")
+}
+
+// ==========================================
+// CHECKLIST DE ENTRADA (MECÁNICA)
+// ==========================================
+
+model ChecklistItem {
+  id String @id @default(uuid(7))
+
+  category  String // "exterior", "interior", "mecanico", "documentos"
+  item      String
+  checked   Boolean @default(false)
+  condition String? // "good", "damaged", "missing"
+  notes     String?
+  photoUrl  String? @map("photo_url")
+
+  serviceOrderId String       @map("service_order_id")
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("checklist_items")
+}
+
+// ==========================================
+// INVENTARIO (PRODUCTOS)
+// ==========================================
+
+model Product {
+  id String @id @default(uuid(7))
+
+  sku         String
+  name        String
+  description String?
+
+  // Categoría
+  categoryId String?   @map("category_id")
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  // Precios (en USD como base)
+  costPrice Decimal @default(0) @map("cost_price") @db.Decimal(10, 2)
+  salePrice Decimal @map("sale_price") @db.Decimal(10, 2)
+
+  // Inventario
+  stock    Int  @default(0)
+  minStock Int  @default(5) @map("min_stock")
+  maxStock Int? @map("max_stock")
+
+  // Unidad
+  unit String @default("unidad") // unidad, litro, metro, kg
+
+  // Estado
+  isActive Boolean @default(true) @map("is_active")
+
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  orderItems OrderItem[]
+
+  @@unique([organizationId, sku])
+  @@index([organizationId, isActive])
+  @@map("products")
+}
+
+// ==========================================
+// SERVICIOS
+// ==========================================
+
+model Service {
+  id String @id @default(uuid(7))
+
+  name        String
+  description String?
+
+  // Categoría
+  categoryId String?   @map("category_id")
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  // Precio (en USD como base)
+  price Decimal @db.Decimal(10, 2)
+
+  // Tiempo estimado (minutos)
+  estimatedTime Int? @map("estimated_time")
+
+  // Estado
+  isActive Boolean @default(true) @map("is_active")
+
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  orderItems OrderItem[]
+
+  @@index([organizationId, isActive])
+  @@map("services")
+}
+
+// ==========================================
+// CATEGORÍAS
+// ==========================================
+
+model Category {
+  id String @id @default(uuid(7))
+
+  name  String
+  type  String // "product" | "service" | "expense"
+  color String @default("#6366F1")
+
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relaciones
+  products Product[]
+  services Service[]
+  expenses Expense[]
+
+  @@unique([organizationId, name, type])
+  @@map("categories")
+}
+
+// ==========================================
+// PROVEEDORES
+// ==========================================
+
+model Supplier {
+  id      String  @id @default(uuid(7))
+  name    String // Nombre comercial
+  taxName String? @map("tax_name") // Razón social
+  taxId   String? @map("tax_id") // RIF, NIT, RFC
+
+  type   String? // Tipo de proveedor
+  active Boolean @default(true)
+  notes  String? @db.Text
+
+  phone    String? // Teléfono general
+  whatsapp String? // Móvil WhatsApp
+  email    String?
+
+  address String?
+  city    String?
+  state   String?
+  contact String? // Persona de contacto
+  url     String? // Página web
+
+  paymentMethod1 String? @map("payment_method1")
+  paymentMethod2 String? @map("payment_method2")
+
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  expenses Expense[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("suppliers")
+}
+
+// ==========================================
+// GASTOS
+// ==========================================
+
+model Expense {
+  id          String   @id @default(uuid(7))
+  description String
+  amount      Decimal  @db.Decimal(10, 2) // En USD o moneda base
+  amountLocal Decimal? @map("amount_local") @db.Decimal(10, 2) // Solo para auditoría si se pagó en local
+  date        DateTime @default(now())
+
+  categoryId String?   @map("category_id")
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  supplierId String?   @map("supplier_id")
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
+
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("expenses")
+}
+
+// ==========================================
+// CITAS
+// ==========================================
+
+model Appointment {
+  id String @id @default(uuid(7))
+
+  title       String
+  description String?
+
+  // Fecha y hora
+  scheduledAt DateTime @map("scheduled_at")
+  duration    Int      @default(60) // minutos
+
+  // Estado
+  status AppointmentStatus @default(SCHEDULED)
+
+  // Cliente
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  // Recordatorios
+  reminder24h  Boolean @default(true) @map("reminder_24h")
+  reminder1h   Boolean @default(false) @map("reminder_1h")
+  reminderSent Boolean @default(false) @map("reminder_sent")
+
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([organizationId, scheduledAt])
+  @@map("appointments")
+}
+
+// ==========================================
+// PAGOS
+// ==========================================
+
+model Payment {
+  id String @id @default(uuid(7))
+
+  amount       Decimal  @db.Decimal(10, 2) // En moneda de pago
+  amountUsd    Decimal  @map("amount_usd") @db.Decimal(10, 2) // Equivalente en USD
+  currency     Currency
+  exchangeRate Decimal? @map("exchange_rate") @db.Decimal(10, 2) // Tasa usada
+
+  method    PaymentMethod
+  reference String? // Número de referencia
+  notes     String?
+
+  serviceOrderId String       @map("service_order_id")
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("payments")
+}
+
+// ==========================================
+// FACTURAS
+// ==========================================
+
+model Invoice {
+  id            String @id @default(uuid(7))
+  invoiceNumber String @map("invoice_number") // Formato: FAC-2024-0001
+
+  // Datos fiscales en el momento de la factura
+  customerName    String  @map("customer_name")
+  customerDoc     String? @map("customer_doc")
+  customerAddress String? @map("customer_address")
+
+  // Totales
+  subtotal  Decimal @db.Decimal(10, 2)
+  taxRate   Decimal @map("tax_rate") @db.Decimal(10, 2)
+  taxAmount Decimal @map("tax_amount") @db.Decimal(10, 2)
+  total     Decimal @db.Decimal(10, 2)
+
+  // Monedas
+  currencyPrimary   Currency  @map("currency_primary")
+  totalPrimary      Decimal   @map("total_primary") @db.Decimal(10, 2)
+  currencySecondary Currency? @map("currency_secondary")
+  totalSecondary    Decimal?  @map("total_secondary") @db.Decimal(10, 2)
+  exchangeRate      Decimal?  @map("exchange_rate") @db.Decimal(10, 2)
+
+  // Estado
+  status PaymentStatus @default(PENDING)
+
+  // Relaciones
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  serviceOrderId String       @unique @map("service_order_id")
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id])
+
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([organizationId, invoiceNumber])
+  @@map("invoices")
+}
+
+// ==========================================
+// CONFIGURACIÓN DE TERMINOLOGÍA
+// ==========================================
+
+model TerminologyPreset {
+  id           String       @id // UUIDv7
+  businessType BusinessType @unique @map("business_type")
+
+  // Términos personalizados (JSON)
+  terms Json
+
+  // Campos del activo
+  assetFields Json @map("asset_fields")
+
+  // Checklist predeterminado (solo AUTOMOTIVE)
+  defaultChecklist Json? @map("default_checklist")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("terminology_presets")
+}
+
+// ==========================================
+// LOGS DE AUDITORÍA
+// ==========================================
+
+model AuditLog {
+  id       String  @id @default(uuid(7))
+  action   String // "CREATE", "UPDATE", "DELETE", "STOCK_ADJUSTMENT", etc.
+  entity   String // "Order", "Product", "Invoice", etc.
+  entityId String? @map("entity_id")
+  details  Json? // { "old": ..., "new": ... }
+
+  userId String? @map("user_id")
+  user   User?   @relation(fields: [userId], references: [id])
+
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+}
