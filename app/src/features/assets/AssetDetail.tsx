@@ -1,7 +1,7 @@
 import React from 'react';
-import { X, Save, Car, FileText, Calendar, User, Loader2 } from 'lucide-react';
+import { X, Save, Car, FileText, Calendar, Bell, Loader2 } from 'lucide-react';
 import { Asset } from '../../types/api';
-import { useUpdateAsset, useCustomers } from '../../hooks/useApi';
+import { useUpdateAsset } from '../../hooks/useApi';
 import { getEffectiveTerminology } from '../../lib/terminology';
 import { useAuthStore } from '../../stores/useAuthStore';
 
@@ -14,7 +14,6 @@ export const AssetDetail: React.FC<Props> = ({ asset, onClose }) => {
     const { organization } = useAuthStore();
     const terminology = getEffectiveTerminology(organization?.businessType, organization?.customTerminology);
     const { assetLabel } = terminology;
-    const { data: customers } = useCustomers();
     const [form, setForm] = React.useState({
         field1: asset.field1 ?? '',
         field2: asset.field2 ?? '',
@@ -24,7 +23,7 @@ export const AssetDetail: React.FC<Props> = ({ asset, onClose }) => {
         field6: asset.field6 ?? '',
         notes: asset.notes ?? '',
         nextAppointmentAt: asset.nextAppointmentAt ? new Date(asset.nextAppointmentAt).toISOString().slice(0, 16) : '',
-        customerId: asset.customerId ?? '',
+        nextAppointmentNote: (asset as any).nextAppointmentNote ?? '',
     });
     const updateAsset = useUpdateAsset();
 
@@ -42,8 +41,8 @@ export const AssetDetail: React.FC<Props> = ({ asset, onClose }) => {
             field5: form.field5,
             field6: form.field6,
             notes: form.notes,
-            customerId: form.customerId || asset.customerId,
             nextAppointmentAt: form.nextAppointmentAt ? new Date(form.nextAppointmentAt).toISOString() : undefined,
+            nextAppointmentNote: form.nextAppointmentNote || undefined,
         };
         Object.keys(payload).forEach((k) => (payload as any)[k] === undefined && delete (payload as any)[k]);
 
@@ -147,36 +146,35 @@ export const AssetDetail: React.FC<Props> = ({ asset, onClose }) => {
                     </div>
                 </div>
 
-                <div className="bg-slate-50 dark:bg-slate-950/50 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center">
-                            <User size={12} className="mr-1" /> Cliente
-                        </label>
-                        <select
-                            value={form.customerId}
-                            onChange={(e) => handleChange('customerId', e.target.value)}
-                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-3 px-5 text-sm font-bold focus:ring-4 focus:ring-primary-500/10 outline-none transition-all appearance-none cursor-pointer"
-                        >
-                            <option value="">Seleccionar cliente</option>
-                            {customers?.map((c: any) => (
-                                <option key={c.id} value={c.id}>{c.name}</option>
-                            ))}
-                        </select>
+                <div className="bg-slate-50 dark:bg-slate-950/50 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-primary-600 uppercase tracking-widest ml-1 flex items-center">
+                                <Calendar size={12} className="mr-1" /> Próxima Cita
+                            </label>
+                            <input
+                                type="datetime-local"
+                                value={form.nextAppointmentAt}
+                                onChange={(e) => handleChange('nextAppointmentAt', e.target.value)}
+                                className="w-full bg-white dark:bg-slate-900 border border-primary-200 dark:border-primary-900/30 rounded-xl py-3 px-5 text-sm font-black text-primary-600 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all"
+                            />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest ml-1 flex items-center">
+                                <Bell size={12} className="mr-1" /> Mensaje Recordatorio
+                            </label>
+                            <input
+                                type="text"
+                                value={form.nextAppointmentNote}
+                                onChange={(e) => handleChange('nextAppointmentNote', e.target.value)}
+                                placeholder="Texto para notificar al cliente..."
+                                className="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-900/30 rounded-xl py-3 px-5 text-sm font-bold text-amber-600 focus:ring-4 focus:ring-amber-500/10 outline-none transition-all"
+                            />
+                        </div>
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-primary-600 uppercase tracking-widest ml-1 flex items-center">
-                            <Calendar size={12} className="mr-1" /> Próxima Cita
-                        </label>
-                        <input
-                            type="datetime-local"
-                            value={form.nextAppointmentAt}
-                            onChange={(e) => handleChange('nextAppointmentAt', e.target.value)}
-                            className="w-full bg-white dark:bg-slate-900 border border-primary-200 dark:border-primary-900/30 rounded-xl py-3 px-5 text-sm font-black text-primary-600 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all"
-                        />
-                    </div>
-
-                    <div className="space-y-1.5 md:col-span-2">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center">
                             <FileText size={12} className="mr-1" /> Notas
                         </label>

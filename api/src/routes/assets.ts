@@ -13,6 +13,7 @@ const assetSchema = z.object({
     field6: z.string().optional(),
     photoUrl: z.string().optional(),
     nextAppointmentAt: z.string().optional(),
+    nextAppointmentNote: z.string().optional(),
     notes: z.string().optional(),
     customerId: z.string(),
     organizationId: z.string().optional(),

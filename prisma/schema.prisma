@@ -372,7 +372,8 @@ model Asset {
   notes String?
 
   // Próxima cita programada para este activo
-  nextAppointmentAt DateTime? @map("next_appointment_at")
+  nextAppointmentAt   DateTime? @map("next_appointment_at")
+  nextAppointmentNote String?   @map("next_appointment_note")
 
   customerId String   @map("customer_id")
   customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
