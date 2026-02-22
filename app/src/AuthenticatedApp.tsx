@@ -109,7 +109,7 @@ export const AuthenticatedApp = () => {
     useEffect(() => {
         const pathSegments = location.pathname.split('/');
         const path = pathSegments.pop() || 'dashboard';
-        const validViews: AppView[] = ['dashboard', 'customers', 'orders', 'checklist', 'inventory', 'services', 'appointments', 'billing', 'expenses', 'integrations', 'style', 'settings'];
+        const validViews: AppView[] = ['dashboard', 'customers', 'orders', 'checklist', 'inventory', 'services', 'appointments', 'billing', 'expenses', 'integrations', 'style', 'settings', 'assets'];
 
         // Si el ultimo segmento es el slug o dashboard, asumimos view 'dashboard'
         const currentView = validViews.includes(path as AppView) ? path : 'dashboard';

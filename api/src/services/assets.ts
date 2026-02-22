@@ -2,12 +2,17 @@ import { prisma } from '../lib/db';
 import { HTTPException } from 'hono/http-exception';
 
 export const AssetService = {
-    async getAssets(organizationId: string, customerId?: string) {
+    async getAssets(organizationId: string, customerId?: string, customerName?: string) {
+        // Build dynamic where filter to support filtering by customerId or by customer name
+        const where: any = { organizationId };
+        if (customerId) {
+            where.customerId = customerId;
+        }
+        if (customerName) {
+            where.customer = { name: { contains: customerName, mode: 'insensitive' } };
+        }
         return prisma.asset.findMany({
-            where: {
-                organizationId,
-                ...(customerId ? { customerId } : {})
-            },
+            where,
             include: { customer: true },
             orderBy: { createdAt: 'desc' }
         });

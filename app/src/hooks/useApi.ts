@@ -135,15 +135,15 @@ export const useDeleteMember = () => {
 
 // -- ACTIVOS --
 
-export const useAssets = (customerId?: string) => {
+export const useAssets = (customerName?: string, customerId?: string) => {
     const { data: session } = authClient.useSession();
     const activeOrgId = session?.session?.activeOrganizationId;
 
     return useQuery({
-        queryKey: ['assets', customerId],
+        queryKey: ['assets', customerName, customerId],
         queryFn: async () => {
             const res = await client.api.assets.$get({
-                query: { customerId }
+                query: { customerId, customerName }
             });
             if (!res.ok) throw new Error('Error al cargar activos');
             return await res.json();

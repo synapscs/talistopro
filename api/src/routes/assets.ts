@@ -23,8 +23,9 @@ const assets = new Hono<AppEnv>()
     .get('/', async (c) => {
         const orgId = c.get('orgId');
         const customerId = c.req.query('customerId');
+        const customerName = c.req.query('customerName');
 
-        const list = await AssetService.getAssets(orgId, customerId);
+        const list = await AssetService.getAssets(orgId, customerId, customerName);
         return c.json(list);
     })
     .post('/', zValidator('json', assetSchema.omit({ organizationId: true })), async (c) => {

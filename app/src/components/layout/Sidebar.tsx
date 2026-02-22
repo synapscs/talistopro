@@ -34,7 +34,7 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }: SidebarItemProps) =
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}
   `}>
         <Icon size={20} className={active ? 'text-white' : 'group-hover:text-primary-500 transition-colors'} />
-        <span className={`font-bold text-sm ${active ? 'text-white' : 'group-hover:text-slate-900 dark:group-hover:text-white'}`}>{label}</span>
+                <span className={`font-bold text-sm ${active ? 'text-white' : 'group-hover:text-slate-900 dark:group-hover:text-white'}`}>{label}</span>
     </div>
 );
 
