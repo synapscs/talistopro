@@ -20,14 +20,13 @@ export const DesktopAuditLog = ({ orderId, logs = [] }: DesktopAuditLogProps) =>
     };
 
     return (
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 h-full flex flex-col">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center mb-6 shrink-0">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center mb-4 shrink-0">
                 <Clock size={14} className="mr-2" />
                 Historial de Actividad
             </h3>
 
-            <div className="relative space-y-6 pl-2 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar">
-                {/* Vertical Line */}
+            <div className="relative space-y-4 pl-2 overflow-y-auto max-h-[250px] pr-2 custom-scrollbar">
                 <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-slate-100 dark:bg-slate-800 -z-10"></div>
 
                 {logs.length === 0 ? (

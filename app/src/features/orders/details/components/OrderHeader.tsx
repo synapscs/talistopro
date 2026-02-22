@@ -232,8 +232,8 @@ export const OrderHeader: React.FC<OrderHeaderProps> = ({
 
     return (
         <>
-            <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40">
-                <div className="p-6 max-w-[1600px] mx-auto">
+            <div className="bg-slate-50 dark:bg-slate-950 px-6 py-4 sticky top-0 z-40">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-6 max-w-[1600px] mx-auto">
                     <div className="flex flex-col space-y-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-6">

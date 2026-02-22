@@ -67,10 +67,10 @@ export const OrderItemsTable: React.FC<OrderItemsTableProps> = ({ items }) => {
                                 </span>
                             </td>
                             <td className="px-6 py-5 text-right font-mono text-xs text-slate-500 dark:text-slate-400">
-                                {formatCurrency(Number(item.price), currency, country)}
+                                {formatCurrency(Number(item.unitPrice || item.price), currency, country)}
                             </td>
                             <td className="px-6 py-5 text-right font-black font-mono text-sm text-slate-900 dark:text-white">
-                                {formatCurrency(Number(item.price) * item.quantity, currency, country)}
+                                {formatCurrency(Number(item.unitPrice || item.price) * item.quantity, currency, country)}
                             </td>
                         </tr>
                     ))}
