@@ -386,6 +386,7 @@ model Asset {
 
   // Relaciones
   serviceOrders ServiceOrder[]
+  appointments  Appointment[]
 
   @@index([organizationId, customerId])
   @@map("assets")
@@ -484,6 +485,7 @@ model ServiceOrder {
   statusHistory StatusHistory[]
   payments      Payment[]
   invoice       Invoice?
+  appointment   Appointment?
 
   @@unique([organizationId, orderNumber])
   @@index([organizationId, status])
@@ -769,18 +771,47 @@ model Appointment {
   // Fecha y hora
   scheduledAt DateTime @map("scheduled_at")
   duration    Int      @default(60) // minutos
+  endTime     DateTime @map("end_time") // calculado: scheduledAt + duration
 
   // Estado
   status AppointmentStatus @default(SCHEDULED)
 
-  // Cliente
-  customerId String   @map("customer_id")
-  customer   Customer @relation(fields: [customerId], references: [id])
+  // Cliente registrado (opcional para identidad progresiva)
+  customerId String?  @map("customer_id")
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  // Datos temporales para clientes nuevos (identidad progresiva)
+  tempClientName  String? @map("temp_client_name")
+  tempClientPhone String? @map("temp_client_phone")
+
+  // Activo registrado (opcional)
+  assetId String? @map("asset_id")
+  asset   Asset?  @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  // Datos temporales del activo (para quick booking)
+  tempAssetInfo String? @map("temp_asset_info") // "Toyota Corolla Blanco"
 
   // Recordatorios
-  reminder24h  Boolean @default(true) @map("reminder_24h")
-  reminder1h   Boolean @default(false) @map("reminder_1h")
-  reminderSent Boolean @default(false) @map("reminder_sent")
+  reminder24h    Boolean @default(true) @map("reminder_24h")
+  reminder1h     Boolean @default(false) @map("reminder_1h")
+  reminderSent24 Boolean @default(false) @map("reminder_sent_24")
+  reminderSent1h Boolean @default(false) @map("reminder_sent_1h")
+
+  // Confirmación
+  confirmationSent Boolean   @default(false) @map("confirmation_sent")
+  confirmedAt      DateTime? @map("confirmed_at")
+  confirmedByReply Boolean   @default(false) @map("confirmed_by_reply") // via WhatsApp bot
+
+  // Envío de confirmación al crear
+  sendConfirmation Boolean @default(true) @map("send_confirmation")
+
+  // Conversión a orden
+  serviceOrderId String?      @unique @map("service_order_id")
+  serviceOrder   ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: SetNull)
+  convertedAt    DateTime?    @map("converted_at")
+
+  // Notas internas
+  internalNotes String? @map("internal_notes")
 
   organizationId String       @map("organization_id")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -789,6 +820,8 @@ model Appointment {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([organizationId, scheduledAt])
+  @@index([organizationId, status])
+  @@index([organizationId, customerId])
   @@map("appointments")
 }
 
