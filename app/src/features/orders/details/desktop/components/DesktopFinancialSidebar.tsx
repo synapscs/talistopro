@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { DollarSign, CreditCard, Plus, Receipt } from 'lucide-react';
 import { useOrderActions } from '../../hooks/useOrderActions';
-import { formatDecimal } from '../../../../../lib/finance'; // Adjust path
+import { formatDecimal } from '../../../../../lib/finance';
 import { OrderFull } from '../../../../../types/api';
+import { useAuthStore } from '../../../../../stores/useAuthStore';
 
 interface DesktopFinancialSidebarProps {
     order: OrderFull;
@@ -10,26 +11,35 @@ interface DesktopFinancialSidebarProps {
 
 export const DesktopFinancialSidebar = ({ order }: DesktopFinancialSidebarProps) => {
     const { addPayment } = useOrderActions();
+    const { organization } = useAuthStore();
     const [isAddingPayment, setIsAddingPayment] = useState(false);
     const [amount, setAmount] = useState('');
-    const [method, setMethod] = useState('cash');
+    const [method, setMethod] = useState('CASH');
+    const [reference, setReference] = useState('');
+    const [notes, setNotes] = useState('');
 
     const handleAddPayment = () => {
         if (!amount) return;
         addPayment.mutate({
             orderId: order.id,
             amount: parseFloat(amount),
-            method: method
+            currency: organization?.primaryCurrency || 'USD',
+            exchangeRate: organization?.exchangeRate ? Number(organization.exchangeRate) : undefined,
+            method,
+            reference: reference || undefined,
+            notes: notes || undefined
         }, {
             onSuccess: () => {
                 setIsAddingPayment(false);
                 setAmount('');
+                setReference('');
+                setNotes('');
             }
         });
     };
 
     const payments = order.payments || [];
-    const totalPaid = (payments as any[]).reduce((sum: number, p) => sum + Number(p.amount), 0);
+    const totalPaid = (payments as any[]).reduce((sum: number, p) => sum + Number(p.amountUsd), 0);
     const balance = Number(order.total) - totalPaid;
 
     return (
@@ -107,11 +117,27 @@ export const DesktopFinancialSidebar = ({ order }: DesktopFinancialSidebarProps)
                             onChange={(e) => setMethod(e.target.value)}
                             className="w-full text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500/50"
                         >
-                            <option value="cash">Efectivo ($)</option>
-                            <option value="card">Tarjeta / Punto</option>
-                            <option value="transfer">Transferencia</option>
-                            <option value="zelle">Zelle</option>
+                            <option value="CASH">Efectivo ($)</option>
+                            <option value="CARD">Tarjeta / Punto</option>
+                            <option value="TRANSFER">Transferencia</option>
+                            <option value="ZELLE">Zelle</option>
+                            <option value="MOBILE_PAYMENT">Pago Móvil</option>
+                            <option value="OTHER">Otro</option>
                         </select>
+                        <input
+                            type="text"
+                            placeholder="Referencia (opcional)"
+                            value={reference}
+                            onChange={(e) => setReference(e.target.value)}
+                            className="w-full text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500/50"
+                        />
+                        <input
+                            type="text"
+                            placeholder="Notas (opcional)"
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            className="w-full text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500/50"
+                        />
                         <button
                             onClick={handleAddPayment}
                             disabled={addPayment.isPending}
@@ -131,7 +157,11 @@ export const DesktopFinancialSidebar = ({ order }: DesktopFinancialSidebarProps)
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-xs font-bold text-slate-700 dark:text-slate-300 capitalize">
-                                        {payment.method}
+                                        {payment.method === 'CASH' ? 'Efectivo' :
+                                         payment.method === 'CARD' ? 'Tarjeta' :
+                                         payment.method === 'TRANSFER' ? 'Transferencia' :
+                                         payment.method === 'ZELLE' ? 'Zelle' :
+                                         payment.method === 'MOBILE_PAYMENT' ? 'Pago Móvil' : 'Otro'}
                                     </span>
                                     <span className="text-[10px] text-slate-400">
                                         {new Date(payment.createdAt).toLocaleDateString()}
@@ -139,7 +169,7 @@ export const DesktopFinancialSidebar = ({ order }: DesktopFinancialSidebarProps)
                                 </div>
                             </div>
                             <span className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300">
-                                ${formatDecimal(Number(payment.amount))}
+                                ${formatDecimal(Number(payment.amountUsd))}
                             </span>
                         </div>
                     ))}

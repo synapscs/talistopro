@@ -11,7 +11,7 @@ import { AutomotiveChecklist } from './features/orders/AutomotiveChecklist';
 import { InventoryManager } from './features/inventory/InventoryManager';
 import { ServiceCatalog } from './features/services/ServiceCatalog';
 import { AppointmentManager } from './features/appointments/AppointmentManager';
-import { InvoicingModule } from './features/finance/InvoicingModule';
+import { BillingModule } from './features/finance/BillingModule';
 import { ExpenseManager } from './features/finance/ExpenseManager';
 import { IntegrationSettings } from './features/settings/IntegrationSettings';
 import { GeneralSettings } from './features/settings/GeneralSettings';
@@ -177,7 +177,7 @@ export const AuthenticatedApp = () => {
                         <Route path="assets" element={<AssetsPage />} />
                         <Route path="services" element={<ServiceCatalog />} />
                         <Route path="appointments" element={<AppointmentManager />} />
-                        <Route path="billing" element={<InvoicingModule />} />
+                        <Route path="billing" element={<BillingModule />} />
                         <Route path="expenses" element={<ExpenseManager />} />
                         {/* <Route path="integrations" element={<IntegrationSettings />} /> */}
                         <Route path="settings" element={<GeneralSettings />} />

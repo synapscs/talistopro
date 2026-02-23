@@ -1,0 +1,34 @@
+# Dependencias (Causan mucha lentitud si se indexan)
+node_modules/
+bower_components/
+vendor/
+
+# Entornos virtuales de Python
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+
+# Carpetas de Compilación y Logs
+dist/
+build/
+out/
+bin/
+obj/
+*.log
+
+# Archivos de Sistema y Editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.git/
+
+# Archivos pesados o binarios
+*.exe
+*.dll
+*.so
+*.zip
+*.7z
+*.pdf

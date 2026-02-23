@@ -15,8 +15,11 @@ interface UpdateStatusParams {
 interface AddPaymentParams {
     orderId: string;
     amount: number;
+    currency?: string;
+    exchangeRate?: number;
     method: string;
     reference?: string;
+    notes?: string;
 }
 
 export const useOrderActions = () => {
@@ -40,16 +43,25 @@ export const useOrderActions = () => {
 
     // 2. Add Payment Mutation
     const addPayment = useMutation({
-        mutationFn: async ({ orderId, amount, method, reference }: AddPaymentParams) => {
-            const res = await client.api.orders[':id'].payments.$post({
-                param: { id: orderId },
-                json: { amount, method, reference }
+        mutationFn: async ({ orderId, amount, currency, exchangeRate, method, reference, notes }: AddPaymentParams) => {
+            const res = await client.api.payments.$post({
+                json: {
+                    orderId,
+                    amount,
+                    currency: currency || 'USD',
+                    exchangeRate,
+                    method,
+                    reference,
+                    notes
+                }
             });
             if (!res.ok) throw new Error('Error al registrar pago');
             return await res.json();
         },
         onSuccess: (data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['order', variables.orderId] });
+            queryClient.invalidateQueries({ queryKey: ['payments', variables.orderId] });
+            queryClient.invalidateQueries({ queryKey: ['order-detail', variables.orderId] });
         }
     });
 

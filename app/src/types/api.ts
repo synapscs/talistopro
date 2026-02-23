@@ -52,3 +52,11 @@ export type DashboardStats = ApiResponse<typeof client.api.dashboard.stats.$get>
 
 // Settings
 export type OrganizationSettings = ApiResponse<typeof client.api.settings.$get>;
+
+// Invoices
+export type Invoice = ApiResponse<typeof client.api.invoices.$get>[number];
+export type InvoiceDetail = ApiResponse<typeof client.api.invoices[':id'].$get>;
+
+// Payments
+export type Payment = ApiResponse<typeof client.api.payments.$get>[number];
+export type PaymentDetail = ApiResponse<typeof client.api.payments[':id'].$get>;

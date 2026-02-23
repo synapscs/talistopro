@@ -3,7 +3,10 @@ import { z } from 'zod';
 import { zValidator } from '@hono/zod-validator';
 import { getDetail } from './get-detail';
 import { sendMessage } from './send-message';
+import { PaymentService } from '../../services/payments';
+import { InvoiceService } from '../../services/invoices';
 import { OrderService } from '../../services/orders';
+import { prisma } from '../../lib/db';
 import type { AppEnv } from '../../types/env';
 
 const orderSchema = z.object({
@@ -48,6 +51,23 @@ const orders = new Hono<AppEnv>()
     })
     .route('/', getDetail)
     .route('/', sendMessage)
+    .get('/:id/payments', async (c) => {
+        const orgId = c.get('orgId');
+        const id = c.req.param('id');
+
+        const payments = await PaymentService.getPayments(orgId, id);
+        return c.json(payments);
+    })
+    .get('/:id/invoice', async (c) => {
+        const orgId = c.get('orgId');
+        const id = c.req.param('id');
+
+        const invoice = await InvoiceService.getInvoiceByOrder(orgId, id);
+        if (!invoice) {
+            return c.json(null);
+        }
+        return c.json(invoice);
+    })
     .post('/', zValidator('json', orderSchema.omit({ organizationId: true })), async (c) => {
         const data = c.req.valid('json');
         const orgId = c.get('orgId');

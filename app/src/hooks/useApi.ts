@@ -849,3 +849,187 @@ export const useSendOrderMessage = () => {
         },
     });
 };
+
+// -- PAGOS --
+
+export const usePayments = (orderId?: string) => {
+    const { data: session } = authClient.useSession();
+    const activeOrgId = session?.session?.activeOrganizationId;
+
+    return useQuery({
+        queryKey: ['payments', orderId],
+        queryFn: async () => {
+            const res = await client.api.payments.$get({
+                query: orderId ? { orderId } : undefined
+            });
+            if (!res.ok) throw new Error('Error al cargar pagos');
+            return await res.json();
+        },
+        enabled: !!activeOrgId,
+    });
+};
+
+export const useCreatePayment = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (data: { orderId: string; amount: number; currency?: string; exchangeRate?: number; method: string; reference?: string; notes?: string }) => {
+            const res = await client.api.payments.$post({ json: data });
+            if (!res.ok) throw new Error('Error al crear pago');
+            return await res.json();
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['payments', variables.orderId] });
+            queryClient.invalidateQueries({ queryKey: ['order-detail', variables.orderId] });
+            queryClient.invalidateQueries({ queryKey: ['order', variables.orderId] });
+        },
+    });
+};
+
+export const useUpdatePayment = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (data: { id: string; amount?: number; currency?: string; exchangeRate?: number; method?: string; reference?: string; notes?: string }) => {
+            const res = await client.api.payments[':id'].$put({
+                param: { id: data.id },
+                json: data
+            });
+            if (!res.ok) throw new Error('Error al actualizar pago');
+            return await res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['payments'] });
+            queryClient.invalidateQueries({ queryKey: ['orders'] });
+        },
+    });
+};
+
+export const useDeletePayment = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const res = await client.api.payments[':id'].$delete({ param: { id } });
+            if (!res.ok) throw new Error('Error al eliminar pago');
+            return await res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['payments'] });
+            queryClient.invalidateQueries({ queryKey: ['orders'] });
+        },
+    });
+};
+
+// -- FACTURAS --
+
+export const useInvoices = (filters?: { status?: string; customerId?: string; start?: string; end?: string }) => {
+    const { data: session } = authClient.useSession();
+    const activeOrgId = session?.session?.activeOrganizationId;
+
+    return useQuery({
+        queryKey: ['invoices', filters],
+        queryFn: async () => {
+            const res = await client.api.invoices.$get({
+                query: filters as any
+            });
+            if (!res.ok) throw new Error('Error al cargar facturas');
+            return await res.json();
+        },
+        enabled: !!activeOrgId,
+    });
+};
+
+export const useInvoiceById = (id?: string) => {
+    return useQuery({
+        queryKey: ['invoice', id],
+        queryFn: async () => {
+            if (!id) return null;
+            const res = await client.api.invoices[':id'].$get({
+                param: { id }
+            });
+            if (!res.ok) throw new Error('Error al cargar factura');
+            return await res.json();
+        },
+        enabled: !!id,
+    });
+};
+
+export const useInvoiceByOrder = (orderId?: string) => {
+    return useQuery({
+        queryKey: ['invoice-by-order', orderId],
+        queryFn: async () => {
+            if (!orderId) return null;
+            const res = await client.api.invoices['order'][':orderId'].$get({
+                param: { orderId }
+            });
+            if (!res.ok) throw new Error('Error al cargar factura');
+            return await res.json();
+        },
+        enabled: !!orderId,
+    });
+};
+
+export const useCreateInvoice = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (data: { orderId: string }) => {
+            const res = await client.api.invoices.$post({ json: data });
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error((error as any).message || 'Error al crear factura');
+            }
+            return await res.json();
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+            queryClient.invalidateQueries({ queryKey: ['invoice-by-order', variables.orderId] });
+            queryClient.invalidateQueries({ queryKey: ['order-detail', variables.orderId] });
+        },
+    });
+};
+
+export const useUpdateInvoice = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (data: { id: string; customerName?: string; customerDoc?: string; customerAddress?: string; status?: string }) => {
+            const res = await client.api.invoices[':id'].$put({
+                param: { id: data.id },
+                json: data
+            });
+            if (!res.ok) throw new Error('Error al actualizar factura');
+            return await res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+        },
+    });
+};
+
+export const useUpdateInvoiceStatus = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (data: { id: string; status: 'PENDING' | 'PARTIAL' | 'PAID' | 'REFUNDED' }) => {
+            const res = await client.api.invoices[':id']['status'].$patch({
+                param: { id: data.id },
+                json: { status: data.status }
+            });
+            if (!res.ok) throw new Error('Error al actualizar estado de factura');
+            return await res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+        },
+    });
+};
+
+export const useDeleteInvoice = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const res = await client.api.invoices[':id'].$delete({ param: { id } });
+            if (!res.ok) throw new Error('Error al eliminar factura');
+            return await res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['invoices'] });
+        },
+    });
+};
