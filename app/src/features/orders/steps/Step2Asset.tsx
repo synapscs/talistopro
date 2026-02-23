@@ -18,7 +18,7 @@ export const Step2Asset = ({ data, onUpdate, onNext }: Step2Props) => {
     const technicianLabel = organization?.customTerminology?.technicianLabel || preset.technicianLabel;
 
     // Hooks
-    const { data: assets, isLoading: loadingAssets } = useAssets(data.customer?.id);
+    const { data: assets, isLoading: loadingAssets } = useAssets(undefined, data.customer?.id);
     const { data: members, isLoading: loadingMembers } = useMembers();
 
     const [showNewAsset, setShowNewAsset] = useState(false);

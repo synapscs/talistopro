@@ -17,6 +17,7 @@ import { appointments } from "./routes/appointments";
 import { dashboard } from "./routes/dashboard";
 import { upload } from "./routes/upload";
 import { categories } from "./routes/categories";
+import { notifications } from "./routes/notifications";
 
 import { tenantGuard } from "./middleware/tenant";
 
@@ -54,6 +55,7 @@ app.route("/api/appointments", appointments);
 app.route("/api/dashboard", dashboard);
 app.route("/api/upload", upload);
 app.route("/api/categories", categories);
+app.route("/api/notifications", notifications);
 
 app.get("/", (c) => {
     return c.text("TaListoPro API is running! 🚀");
