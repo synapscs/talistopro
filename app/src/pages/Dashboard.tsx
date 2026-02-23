@@ -1,16 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Users,
     ClipboardList,
     TrendingUp,
     AlertCircle,
     Clock,
-    Loader2
+    Loader2,
+    BarChart3,
+    LayoutDashboard
 } from 'lucide-react';
 import { useAuthStore } from '../stores/useAuthStore';
 import { getEffectiveTerminology } from '../lib/terminology';
 import { useOrders, useDashboardStats, useProducts } from '../hooks/useApi';
 import { StatCardProps, Order, Product } from '../types/api';
+import { AdvancedDashboard } from './AdvancedDashboard';
 
 const StatCard = ({ icon: Icon, label, value, trend, color }: StatCardProps) => (
     <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -31,6 +34,7 @@ const StatCard = ({ icon: Icon, label, value, trend, color }: StatCardProps) => 
 
 export const Dashboard = () => {
     const { organization } = useAuthStore();
+    const [viewMode, setViewMode] = useState<'basic' | 'advanced'>('basic');
     const terminology = getEffectiveTerminology(organization?.businessType, organization?.customTerminology);
     const { orderPlural, partPlural, assetLabel } = terminology;
 
@@ -51,11 +55,24 @@ export const Dashboard = () => {
         );
     }
 
+    if (viewMode === 'advanced') {
+        return <AdvancedDashboard />;
+    }
+
     return (
         <div className="space-y-8">
-            <div>
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Hola, Admin 👋</h1>
-                <p className="text-slate-500 dark:text-slate-400">Aquí tienes el resumen de hoy en {organization?.name || 'Tu Taller'}.</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Hola, Admin 👋</h1>
+                    <p className="text-slate-500 dark:text-slate-400">Aquí tienes el resumen de hoy en {organization?.name || 'Tu Taller'}.</p>
+                </div>
+                <button
+                    onClick={() => setViewMode('advanced')}
+                    className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2.5 rounded-lg font-bold text-sm shadow-lg transition-all"
+                >
+                    <BarChart3 size={16} />
+                    <span>Dashboard Avanzado</span>
+                </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

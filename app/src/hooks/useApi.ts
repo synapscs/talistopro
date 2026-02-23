@@ -631,6 +631,57 @@ export const useDashboardStats = () => {
     });
 };
 
+export const useFinancialMetrics = (filters?: { startDate?: string; endDate?: string; period?: 'today' | 'week' | 'month' | 'quarter' | 'year' }) => {
+    const { data: session } = authClient.useSession();
+    const activeOrgId = session?.session?.activeOrganizationId;
+
+    return useQuery({
+        queryKey: ['financial-metrics', filters],
+        queryFn: async () => {
+            const res = await client.api.dashboard['financial-metrics'].$get({
+                query: filters as any
+            });
+            if (!res.ok) throw new Error('Error al cargar métricas financieras');
+            return await res.json();
+        },
+        enabled: !!activeOrgId,
+    });
+};
+
+export const useTopServices = (filters?: { startDate?: string; endDate?: string }) => {
+    const { data: session } = authClient.useSession();
+    const activeOrgId = session?.session?.activeOrganizationId;
+
+    return useQuery({
+        queryKey: ['top-services', filters],
+        queryFn: async () => {
+            const res = await client.api.dashboard['top-services'].$get({
+                query: filters as any
+            });
+            if (!res.ok) throw new Error('Error al cargar servicios top');
+            return await res.json();
+        },
+        enabled: !!activeOrgId,
+    });
+};
+
+export const useTopCustomers = (filters?: { startDate?: string; endDate?: string }) => {
+    const { data: session } = authClient.useSession();
+    const activeOrgId = session?.session?.activeOrganizationId;
+
+    return useQuery({
+        queryKey: ['top-customers', filters],
+        queryFn: async () => {
+            const res = await client.api.dashboard['top-customers'].$get({
+                query: filters as any
+            });
+            if (!res.ok) throw new Error('Error al cargar clientes top');
+            return await res.json();
+        },
+        enabled: !!activeOrgId,
+    });
+};
+
 // -- APPOINTMENTS --
 
 export const useAppointments = (start?: string, end?: string) => {
