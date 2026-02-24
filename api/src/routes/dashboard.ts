@@ -144,7 +144,7 @@ const dashboard = new Hono<AppEnv>()
             prisma.payment.groupBy({
                 by: ['method'],
                 where: {
-                    organizationId: orgId,
+                    serviceOrder: { organizationId: orgId },
                     ...(dateFilter ? { createdAt: dateFilter } : {})
                 },
                 _count: { id: true },
@@ -175,27 +175,27 @@ const dashboard = new Hono<AppEnv>()
             // Ingresos por mes (últimos 12 meses)
             prisma.$queryRaw<Array<{ month: string; total: number }>>`
                 SELECT 
-                    TO_CHAR(createdAt, 'YYYY-MM') as month,
+                    TO_CHAR(created_at, 'YYYY-MM') as month,
                     SUM(total) as total
                 FROM service_orders
-                WHERE organizationId = ${orgId}::uuid
+                WHERE organization_id = ${orgId}
                     AND status != 'CANCELLED'
-                    AND createdAt >= NOW() - INTERVAL '12 months'
-                GROUP BY TO_CHAR(createdAt, 'YYYY-MM')
+                    AND created_at >= NOW() - INTERVAL '12 months'
+                GROUP BY TO_CHAR(created_at, 'YYYY-MM')
                 ORDER BY month DESC
             `,
 
             // Órdenes por día (últimos 30 días)
             prisma.$queryRaw<Array<{ date: string; count: number; total: number }>>`
                 SELECT 
-                    DATE(createdAt) as date,
+                    DATE(created_at) as date,
                     COUNT(*) as count,
                     COALESCE(SUM(total), 0) as total
                 FROM service_orders
-                WHERE organizationId = ${orgId}::uuid
+                WHERE organization_id = ${orgId}
                     AND status != 'CANCELLED'
-                    AND createdAt >= NOW() - INTERVAL '30 days'
-                GROUP BY DATE(createdAt)
+                    AND created_at >= NOW() - INTERVAL '30 days'
+                GROUP BY DATE(created_at)
                 ORDER BY date ASC
             `
         ]);

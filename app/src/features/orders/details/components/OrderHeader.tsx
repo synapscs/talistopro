@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     ChevronLeft,
-    ChevronDown,
     ArrowRight,
     MessageSquare,
     Share2,
@@ -86,8 +85,7 @@ export const OrderHeader: React.FC<OrderHeaderProps> = ({
     const { organization } = useAuthStore();
     const term = getEffectiveTerminology(organization?.businessType, organization?.customTerminology);
     const updateOrder = useUpdateOrder();
-
-    const [showStageDropdown, setShowStageDropdown] = useState(false);
+    
     const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
     const [showConfirmAdvance, setShowConfirmAdvance] = useState(false);
 
@@ -107,7 +105,7 @@ export const OrderHeader: React.FC<OrderHeaderProps> = ({
         if (!nextStage) return;
         setShowConfirmAdvance(true);
     };
-
+    
     const confirmAdvanceStage = async () => {
         if (!nextStage) return;
         
@@ -118,20 +116,7 @@ export const OrderHeader: React.FC<OrderHeaderProps> = ({
         
         setShowConfirmAdvance(false);
     };
-
-    const handleSelectStage = async (stage: WorkflowStage) => {
-        if (stage.id === order.currentStageId) {
-            setShowStageDropdown(false);
-            return;
-        }
-        
-        setShowStageDropdown(false);
-        await updateOrder.mutateAsync({
-            id: order.id,
-            currentStageId: stage.id,
-        });
-    };
-
+    
     const assetInfo = `${order.asset?.field1 || ''} ${order.asset?.field2 || ''}`.trim();
     const assetField4 = order.asset?.field4 || '';
 
@@ -147,19 +132,18 @@ export const OrderHeader: React.FC<OrderHeaderProps> = ({
                             <ChevronLeft size={24} />
                         </button>
                         
-                        <div className="text-center">
+                         <div className="text-center">
                             <h1 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">
                                 {order.orderNumber || `${term.orderLabel.toUpperCase()} SIN #`}
                             </h1>
-                            <button
-                                onClick={() => setShowStageDropdown(!showStageDropdown)}
-                                className="flex items-center space-x-1 mx-auto mt-1"
+                            <div
+                                className="flex items-center space-x-1 mx-auto mt-1 cursor-default"
                             >
                                 <span className="text-[10px] uppercase font-bold text-primary-600 bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400 px-2 py-0.5 rounded-full">
                                     {currentStage?.name || 'Sin etapa'}
                                 </span>
-                                <ChevronDown size={12} className="text-slate-400" />
-                            </button>
+                                <Circle size={4} className="text-slate-400 fill-current" />
+                            </div>
                         </div>
                         
                         <button
@@ -172,7 +156,7 @@ export const OrderHeader: React.FC<OrderHeaderProps> = ({
 
                     <div className="px-4 pb-3 flex items-center justify-between text-xs text-slate-500">
                         <div className="flex items-center space-x-4">
-                            <span className="flex items-center">
+                             <span className="flex items-center">
                                 <User size={12} className="mr-1" />
                                 {order.customer?.name}
                             </span>
@@ -182,31 +166,6 @@ export const OrderHeader: React.FC<OrderHeaderProps> = ({
                             <span className={timeColor}>{timeInStage}</span>
                         </div>
                     </div>
-
-                    {showStageDropdown && (
-                        <div className="absolute left-4 right-4 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
-                            {sortedStages.map((stage) => {
-                                const isCurrent = stage.id === order.currentStageId;
-                                const isPast = sortedStages.findIndex((s) => s.id === stage.id) < currentIndex;
-                                
-                                return (
-                                    <button
-                                        key={stage.id}
-                                        onClick={() => handleSelectStage(stage)}
-                                        className={`w-full flex items-center justify-between px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${
-                                            isCurrent ? 'bg-primary-50 dark:bg-primary-500/10' : ''
-                                        }`}
-                                    >
-                                        <span className={`text-sm font-bold ${isCurrent ? 'text-primary-600' : isPast ? 'text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>
-                                            {stage.name}
-                                        </span>
-                                        {isCurrent && <Check size={16} className="text-primary-600" />}
-                                        {isPast && <Check size={16} className="text-green-500" />}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
                 </header>
 
                 {showWhatsAppModal && (
@@ -250,40 +209,13 @@ export const OrderHeader: React.FC<OrderHeaderProps> = ({
                                             {order.orderNumber || `${term.orderLabel.toUpperCase()} SIN #`}
                                         </h1>
                                         
-                                        <div className="relative">
-                                            <button
-                                                onClick={() => setShowStageDropdown(!showStageDropdown)}
-                                                className="flex items-center space-x-2 px-3 py-1.5 bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-400 rounded-full text-xs font-bold uppercase tracking-wider hover:bg-primary-200 dark:hover:bg-primary-500/30 transition-all"
+                                         <div className="relative">
+                                            <div
+                                                className="flex items-center space-x-2 px-3 py-1.5 bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-400 rounded-full text-xs font-bold uppercase tracking-wider cursor-default transition-all"
                                             >
                                                 <Circle size={8} className="fill-current" />
                                                 <span>{currentStage?.name || 'Sin etapa'}</span>
-                                                <ChevronDown size={14} />
-                                            </button>
-
-                                            {showStageDropdown && (
-                                                <div className="absolute left-0 top-full mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
-                                                    {sortedStages.map((stage) => {
-                                                        const isCurrent = stage.id === order.currentStageId;
-                                                        const isPast = sortedStages.findIndex((s) => s.id === stage.id) < currentIndex;
-                                                        
-                                                        return (
-                                                            <button
-                                                                key={stage.id}
-                                                                onClick={() => handleSelectStage(stage)}
-                                                                className={`w-full flex items-center justify-between px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${
-                                                                    isCurrent ? 'bg-primary-50 dark:bg-primary-500/10' : ''
-                                                                }`}
-                                                            >
-                                                                <span className={`text-sm font-bold ${isCurrent ? 'text-primary-600' : isPast ? 'text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>
-                                                                    {stage.name}
-                                                                </span>
-                                                                {isCurrent && <Check size={16} className="text-primary-600" />}
-                                                                {isPast && <Check size={16} className="text-green-500" />}
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

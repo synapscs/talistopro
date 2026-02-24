@@ -153,14 +153,12 @@ export const ServiceOrderWizard = ({ onSuccess }: { onSuccess?: () => void }) =>
                         className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-primary-600 -z-10 rounded-full transition-all duration-500"
                         style={{ width: `${((currentStep - 1) / 3) * 100}%` }}
                     ></div>
-
+                    
                     {steps.map((step) => (
-                        <button
+                        <div
                             key={step.id}
-                            onClick={() => goToStep(step.id)}
-                            disabled={step.id > currentStep}
                             className={`
-                                flex flex-col items-center justify-center w-10 h-10 rounded-full border-4 transition-all z-10
+                                flex flex-col items-center justify-center w-10 h-10 rounded-full border-4 transition-all z-10 cursor-default
                                 ${currentStep === step.id
                                     ? 'bg-primary-600 border-primary-200 dark:border-primary-900 text-white scale-110 shadow-lg shadow-primary-600/30'
                                     : step.id < currentStep
@@ -169,7 +167,7 @@ export const ServiceOrderWizard = ({ onSuccess }: { onSuccess?: () => void }) =>
                             `}
                         >
                             {step.id < currentStep ? <Check size={16} strokeWidth={3} /> : <step.icon size={16} />}
-                        </button>
+                        </div>
                     ))}
                 </div>
             </div>

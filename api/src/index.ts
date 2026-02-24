@@ -5,6 +5,7 @@ import { serve } from "@hono/node-server";
 import { apiReference } from '@scalar/hono-api-reference';
 import { auth } from "./auth";
 import { customers } from "./routes/customers";
+import { organizations } from "./routes/platform/organizations";
 import { assets } from "./routes/assets";
 import { orders } from "./routes/orders";
 import { inventory } from "./routes/inventory";
@@ -41,6 +42,9 @@ app.all("/api/auth/*", (c) => {
 });
 
 app.route("/api/onboarding", onboarding);
+
+// Platform Admin Routes (needs auth but NOT tenantGuard)
+app.route("/api/platform/organizations", organizations);
 
 // Protected Routes (Everything after this needs a session and activeOrg)
 app.use("/api/*", tenantGuard);

@@ -94,7 +94,13 @@ model Organization {
   // Configuración Visual
   primaryColor String @default("#6366F1") @map("primary_color")
   themeKey     String @default("obsidian") @map("theme_key")
-
+  
+  // Plan de Suscripción
+  planId         String?  @map("plan_id")
+  plan           Plan?    @relation("plan_organization", fields: [planId], references: [id])
+  subscriptionStatus String?  @map("subscription_status") // "trial", "active", "past_due", "cancelled", "suspended"
+  trialEndsAt        DateTime? @map("trial_ends_at")
+  
   // Timestamps
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -106,6 +112,7 @@ model Organization {
   customers        Customer[]
   assets           Asset[]
   serviceOrders    ServiceOrder[]
+  usageLogs       UsageLog[]
   products         Product[]
   services         Service[]
   categories       Category[]
@@ -150,7 +157,13 @@ model OrganizationSettings {
   evolutionInstance String? @map("evolution_instance")
   evolutionApiKey   String? @map("evolution_api_key")
   evolutionApiToken String? @map("evolution_api_token")
-
+  evolutionUrl      String?  @map("evolution_url")
+  
+  // n8n Integration
+  n8nEnabled      Boolean   @default(false) @map("n8n_enabled")
+  n8nWebhookUrl   String?   @map("n8n_webhook_url")
+  n8nEndpointId   String?   @map("n8n_endpoint_id")
+  
   // Plantillas de Notificación
   bookingReminderMsg     String? @map("booking_reminder_msg")
   bookingReminderEnabled Boolean @default(true) @map("booking_reminder_enabled")
@@ -203,7 +216,8 @@ model User {
   name          String
   image         String? @map("image")
   emailVerified Boolean @default(false) @map("email_verified")
-
+  isPlatformAdmin Boolean @default(false) @map("is_platform_admin")
+  
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -213,6 +227,7 @@ model User {
   accounts    Account[]
   invitations Invitation[]
   auditLogs   AuditLog[]
+  platformAdmin PlatformAdmin?
 
   @@map("users")
 }
@@ -935,6 +950,122 @@ model AuditLog {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now()) @map("created_at")
-
+  
   @@map("audit_logs")
+}
+
+// ==========================================
+// PLANES DE SUSCRIPCIÓN
+// ==========================================
+
+model Plan {
+  id          String   @id @default(uuid(7))
+  name        String   @unique // "Básico", "Pro", "Elite"
+  description String?
+  
+  // Precios (USD)
+  monthlyPrice   Decimal  @db.Decimal(10, 2) @map("monthly_price")
+  yearlyPrice    Decimal? @db.Decimal(10, 2) @map("yearly_price")
+  activationFee  Decimal  @db.Decimal(10, 2) @map("activation_fee")
+  
+  // Límites del plan
+  maxMembers         Int      @map("max_members") // Max miembros por organización
+  maxPhotosPerOrder  Int      @map("max_photos_per_order") // Max fotos por orden
+  maxOrdersPerMonth  Int      @map("max_orders_per_month") // Max órdenes/mes
+  
+  // Features habilitadas
+  whatsappEnabled     Boolean @default(false) @map("whatsapp_enabled")
+  n8nEnabled         Boolean @default(false) @map("n8n_enabled")
+  apiEnabled         Boolean @default(false) @map("api_enabled")
+  reportsEnabled     Boolean @default(true) @map("reports_enabled")
+  integrationsEnabled Boolean @default(false) @map("integrations_enabled")
+  
+  // Metadata
+  isActive    Boolean  @default(true) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order") // Para ordenar en UI
+  metadata    Json?    // Configuración adicional
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  // Relaciones
+  organizations Organization[] @relation("plan_organization")
+  
+  @@map("plans")
+}
+
+// ==========================================
+// SUSCRIPCIONES
+// ==========================================
+
+
+model PlatformInvoice {
+  id                String   @id @default(uuid(7))
+  invoiceNumber     String   @unique @map("invoice_number") // "SAAS-2024-0001"
+  
+  subscriptionId    String   @map("subscription_id")
+  
+  // Montos (USD)
+  monthlyFee        Decimal  @db.Decimal(10, 2) @map("monthly_fee")
+  activationFee     Decimal  @db.Decimal(10, 2) @map("activation_fee")
+  taxAmount         Decimal  @db.Decimal(10, 2) @map("tax_amount")
+  total             Decimal  @db.Decimal(10, 2)
+  currency          Currency  @default(USD)
+  
+  // Fechas
+  periodStart       DateTime @map("period_start")
+  periodEnd         DateTime @map("period_end")
+  dueDate           DateTime @map("due_date")
+  paidAt            DateTime? @map("paid_at")
+  
+  // Estado
+  status            String    @default("pending") // "pending", "paid", "void", "past_due"
+  
+  // Detalles
+  description       String?
+  
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  
+  @@unique([subscriptionId, invoiceNumber])
+  @@map("platform_invoices")
+}
+
+// ==========================================
+// PLATFORM ADMINS
+// ==========================================
+
+model PlatformAdmin {
+  id        String   @id @default(uuid(7))
+  userId    String   @unique @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  
+  role      String   @default("admin") // "admin", "support"
+  permissions Json?   // Permisos granulares
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  @@map("platform_admins")
+}
+
+// ==========================================
+// USAGE LOGS (Para límites por plan)
+// ==========================================
+
+model UsageLog {
+  id              String   @id @default(uuid(7))
+  organizationId  String   @map("organization_id")
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  metric          String   // "orders_count", "storage_used"
+  value           Int
+  
+  periodStart     DateTime @map("period_start")
+  periodEnd       DateTime @map("period_end")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  
+  @@unique([organizationId, metric, periodStart])
+  @@map("usage_logs")
 }
