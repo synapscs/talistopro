@@ -117,17 +117,8 @@ export const PaymentService = {
 
     async updatePayment(organizationId: string, id: string, data: any) {
         try {
-            const existingPayment = await prisma.payment.findFirst({
+            const updated = await prisma.payment.updateMany({
                 where: { id, organizationId },
-                include: { serviceOrder: true }
-            });
-
-            if (!existingPayment) {
-                throw new HTTPException(404, { message: 'Pago no encontrado' });
-            }
-
-            const updated = await prisma.payment.update({
-                where: { id },
                 data: {
                     amount: data.amount,
                     amountUsd: data.currency === 'USD' ? data.amount : data.amount / data.exchangeRate,
@@ -139,10 +130,19 @@ export const PaymentService = {
                 }
             });
 
+            if (updated.count === 0) {
+                throw new HTTPException(404, { message: 'Pago no encontrado' });
+            }
+
+            const existingPayment = await prisma.payment.findFirst({
+                where: { id, organizationId },
+                include: { serviceOrder: true }
+            });
+
             await this.updateOrderPaymentStatus(organizationId, existingPayment.serviceOrderId);
 
-            return await prisma.payment.findUnique({
-                where: { id },
+            return await prisma.payment.findFirst({
+                where: { id, organizationId },
                 include: {
                     serviceOrder: {
                         select: {
@@ -176,8 +176,8 @@ export const PaymentService = {
 
             const orderId = existingPayment.serviceOrderId;
 
-            await prisma.payment.delete({
-                where: { id }
+            await prisma.payment.deleteMany({
+                where: { id, organizationId }
             });
 
             await this.updateOrderPaymentStatus(organizationId, orderId);
@@ -195,21 +195,23 @@ export const PaymentService = {
             include: { payments: true }
         });
 
-        if (!order) return;
+        if (!order) {
+            throw new HTTPException(404, { message: 'Orden no encontrada' });
+        }
 
         const totalPaid = (order.payments || []).reduce((sum: number, p: any) => sum + Number(p.amountUsd), 0);
         const orderTotal = Number(order.total);
-
+        
         let paymentStatus: 'PENDING' | 'PARTIAL' | 'PAID' = 'PENDING';
-
+        
         if (totalPaid >= orderTotal) {
             paymentStatus = 'PAID';
         } else if (totalPaid > 0) {
             paymentStatus = 'PARTIAL';
         }
-
-        await prisma.serviceOrder.update({
-            where: { id: orderId },
+        
+        await prisma.serviceOrder.updateMany({
+            where: { id: orderId, organizationId },
             data: {
                 amountPaid: totalPaid,
                 paymentStatus

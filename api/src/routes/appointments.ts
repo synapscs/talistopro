@@ -205,9 +205,17 @@ Si necesitas reagendar, contáctanos.`;
             }
         }
 
-        const appointment = await prisma.appointment.update({
+        const updated = await prisma.appointment.updateMany({
             where: { id, organizationId: orgId },
             data: updateData,
+        });
+
+        if (updated.count === 0) {
+            throw new HTTPException(404, { message: 'Cita no encontrada' });
+        }
+
+        const appointment = await prisma.appointment.findFirst({
+            where: { id, organizationId: orgId },
             include: { customer: true, asset: true }
         });
 
@@ -229,13 +237,17 @@ Si necesitas reagendar, contáctanos.`;
             throw new HTTPException(404, { message: 'Cita no encontrada' });
         }
 
-        const updated = await prisma.appointment.update({
-            where: { id },
+        const updated = await prisma.appointment.updateMany({
+            where: { id, organizationId: orgId },
             data: {
                 status: 'CONFIRMED',
                 confirmedAt: new Date(),
             }
         });
+
+        if (updated.count === 0) {
+            throw new HTTPException(404, { message: 'Cita no encontrada' });
+        }
 
         await recordAudit(c, 'CONFIRM', 'Appointment', id, { status: 'CONFIRMED' });
 
@@ -295,8 +307,8 @@ Te recordamos que tienes una cita programada:
 
         await whatsapp.sendMessage(phone, message, settings.evolutionInstance);
 
-        await prisma.appointment.update({
-            where: { id },
+        await prisma.appointment.updateMany({
+            where: { id, organizationId: orgId },
             data: type === '1h' ? { reminderSent1h: true } : { reminderSent24: true }
         });
 
@@ -317,9 +329,13 @@ Te recordamos que tienes una cita programada:
         const id = c.req.param('id');
         const orgId = c.get('orgId');
 
-        await prisma.appointment.delete({
+        const deleted = await prisma.appointment.deleteMany({
             where: { id, organizationId: orgId }
         });
+
+        if (deleted.count === 0) {
+            throw new HTTPException(404, { message: 'Cita no encontrada' });
+        }
 
         await recordAudit(c, 'DELETE', 'Appointment', id);
 

@@ -134,8 +134,8 @@ export const OrderService = {
 
             let statusUpdate = undefined;
             if (data.currentStageId) {
-                const stage = await prisma.workflowStage.findUnique({
-                    where: { id: data.currentStageId }
+                const stage = await prisma.workflowStage.findFirst({
+                    where: { id: data.currentStageId, organizationId }
                 });
                 if (stage) {
                     if (stage.isInitial) statusUpdate = 'RECEIVED';
@@ -186,8 +186,8 @@ export const OrderService = {
                     stageName: updatedOrder.currentStage?.name
                 });
 
-                const newStage = await prisma.workflowStage.findUnique({
-                    where: { id: data.currentStageId }
+                const newStage = await prisma.workflowStage.findFirst({
+                    where: { id: data.currentStageId, organizationId }
                 });
 
                 if (newStage?.notifyCustomer && updatedOrder.customer) {

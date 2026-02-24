@@ -179,22 +179,22 @@ export const InvoiceService = {
 
     async updateInvoice(organizationId: string, id: string, data: any, context?: any) {
         try {
-            const existing = await prisma.invoice.findFirst({
-                where: { id, organizationId }
-            });
-
-            if (!existing) {
-                throw new HTTPException(404, { message: 'Factura no encontrada' });
-            }
-
-            const updated = await prisma.invoice.update({
-                where: { id },
+            const updated = await prisma.invoice.updateMany({
+                where: { id, organizationId },
                 data: {
                     customerName: data.customerName,
                     customerDoc: data.customerDoc,
                     customerAddress: data.customerAddress,
                     status: data.status
-                },
+                }
+            });
+
+            if (updated.count === 0) {
+                throw new HTTPException(404, { message: 'Factura no encontrada' });
+            }
+
+            const invoice = await prisma.invoice.findFirst({
+                where: { id, organizationId },
                 include: {
                     customer: true,
                     serviceOrder: {
@@ -210,7 +210,7 @@ export const InvoiceService = {
                 await recordAudit(context, 'UPDATE', 'Invoice', id, data);
             }
 
-            return updated;
+            return invoice;
         } catch (error) {
             console.error('[InvoiceService] Error updating invoice:', error);
             if (error instanceof HTTPException) throw error;
@@ -221,15 +221,16 @@ export const InvoiceService = {
     async deleteInvoice(organizationId: string, id: string, context?: any) {
         try {
             const existing = await prisma.invoice.findFirst({
-                where: { id, organizationId }
+                where: { id, organizationId },
+                select: { invoiceNumber: true }
             });
 
             if (!existing) {
                 throw new HTTPException(404, { message: 'Factura no encontrada' });
             }
 
-            await prisma.invoice.delete({
-                where: { id }
+            await prisma.invoice.deleteMany({
+                where: { id, organizationId }
             });
 
             if (context) {
@@ -246,18 +247,18 @@ export const InvoiceService = {
     },
 
     async updateInvoiceStatus(organizationId: string, id: string, status: 'PENDING' | 'PARTIAL' | 'PAID') {
-        const existing = await prisma.invoice.findFirst({
+        const updated = await prisma.invoice.updateMany({
             where: { id, organizationId },
-            include: { serviceOrder: true }
+            data: { status }
         });
 
-        if (!existing) {
+        if (updated.count === 0) {
             throw new HTTPException(404, { message: 'Factura no encontrada' });
         }
 
-        return prisma.invoice.update({
-            where: { id },
-            data: { status }
+        return prisma.invoice.findFirst({
+            where: { id, organizationId },
+            include: { serviceOrder: true }
         });
     }
 };
