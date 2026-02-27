@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { usePlatformAuthStore } from '../../stores/usePlatformAuthStore';
+import { usePlatformAuthStore } from '../../../stores/usePlatformAuthStore';
 
 export default function PlatformLoginPage() {
   const [email, setEmail] = useState('');

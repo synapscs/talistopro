@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { usePlatformAuthStore } from '../../stores/usePlatformAuthStore';
+import { usePlatformAuthStore } from '../../../stores/usePlatformAuthStore';
 
 interface Props {
   children: React.ReactNode;
