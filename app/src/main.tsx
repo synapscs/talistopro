@@ -8,12 +8,12 @@ import { LoginPage } from './features/auth/LoginPage';
 import { SignupPage } from './features/auth/SignupPage';
 import { AuthenticatedApp } from './AuthenticatedApp';
 import { Loader2 } from 'lucide-react';
-import { PlatformLoginPage } from './features/platform/auth/PlatformLoginPage';
-import { PlatformProtectedRoute } from './features/platform/auth/PlatformProtectedRoute';
-import { PlatformLayout } from './features/platform/layout/PlatformLayout';
-import { PlatformDashboard } from './features/platform/dashboard/PlatformDashboard';
-import { OrganizationsList } from './features/platform/organizations/OrganizationsList';
-import { OrganizationDetailPage } from './features/platform/organizations/OrganizationDetailPage';
+import PlatformLoginPage from './features/platform/auth/PlatformLoginPage';
+import PlatformProtectedRoute from './features/platform/auth/PlatformProtectedRoute';
+import PlatformLayout from './features/platform/layout/PlatformLayout';
+import PlatformDashboard from './features/platform/dashboard/PlatformDashboard';
+import OrganizationsList from './features/platform/organizations/OrganizationsList';
+import OrganizationDetailPage from './features/platform/organizations/OrganizationDetailPage';
 
 const queryClient = new QueryClient();
 
