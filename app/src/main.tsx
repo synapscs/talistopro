@@ -14,7 +14,6 @@ import { PlatformLayout } from './features/platform/layout/PlatformLayout';
 import { PlatformDashboard } from './features/platform/dashboard/PlatformDashboard';
 import { OrganizationsList } from './features/platform/organizations/OrganizationsList';
 import { OrganizationDetailPage } from './features/platform/organizations/OrganizationDetailPage';
-import { OrganizationsList } from './features/platform/organizations/OrganizationsList';
 
 const queryClient = new QueryClient();
 
