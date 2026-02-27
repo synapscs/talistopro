@@ -6,6 +6,8 @@ import { apiReference } from '@scalar/hono-api-reference';
 import { auth } from "./auth";
 import { customers } from "./routes/customers";
 import { organizations } from "./routes/platform/organizations";
+import { platformAuthRouter } from "./routes/platform/auth";
+import { platformAuthGuard } from "./middleware/platform-auth";
 import { assets } from "./routes/assets";
 import { orders } from "./routes/orders";
 import { inventory } from "./routes/inventory";
@@ -43,8 +45,12 @@ app.all("/api/auth/*", (c) => {
 
 app.route("/api/onboarding", onboarding);
 
-// Platform Admin Routes (needs auth but NOT tenantGuard)
+// Platform Admin Routes
+app.route("/api/platform/auth", platformAuthRouter);
 app.route("/api/platform/organizations", organizations);
+
+// Apply platform auth guard to protected platform routes
+app.use("/api/platform/*", platformAuthGuard);
 
 // Protected Routes (Everything after this needs a session and activeOrg)
 app.use("/api/*", tenantGuard);

@@ -8,6 +8,9 @@ import { LoginPage } from './features/auth/LoginPage';
 import { SignupPage } from './features/auth/SignupPage';
 import { AuthenticatedApp } from './AuthenticatedApp';
 import { Loader2 } from 'lucide-react';
+import { PlatformLoginPage } from './features/platform/auth/PlatformLoginPage';
+import { PlatformProtectedRoute } from './features/platform/auth/PlatformProtectedRoute';
+import { PlatformDashboard } from './features/platform/dashboard/PlatformDashboard';
 
 const queryClient = new QueryClient();
 
@@ -44,6 +47,20 @@ const App = () => {
                 <Route
                     path="/dashboard/*"
                     element={session ? <AuthenticatedApp /> : <Navigate to="/login" />}
+                />
+
+{/* Platform Admin Routes */}
+                <Route path="/platform/login" element={<PlatformLoginPage />} />
+                <Route 
+                    path="/platform/*" 
+                    element={
+                        <PlatformProtectedRoute>
+                            <Routes>
+                                <Route path="dashboard" element={<PlatformDashboard />} />
+                                <Route path="*" element={<Navigate to="/platform/dashboard" replace />} />
+                            </Routes>
+                        </PlatformProtectedRoute>
+                    } 
                 />
 
                 {/* Catch-all para rutas huérfanas o antiguas */}
