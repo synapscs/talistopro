@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { usePlatformAuthStore } from '../../stores/usePlatformAuthStore';
+import { usePlatformAuthStore } from '../../../stores/usePlatformAuthStore';
 
 export default function PlatformLayout() {
   const { logout, user } = usePlatformAuthStore();
