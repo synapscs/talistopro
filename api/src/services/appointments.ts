@@ -1,5 +1,7 @@
 import { prisma } from '../lib/db';
 import { HTTPException } from 'hono/http-exception';
+import { recordAudit } from '../lib/audit';
+import type { Context } from 'hono';
 
 export const AppointmentService = {
     async getAppointments(organizationId: string, start?: string, end?: string, status?: string, customerId?: string) {
@@ -42,7 +44,7 @@ export const AppointmentService = {
         });
     },
 
-    async createAppointment(organizationId: string, data: any) {
+    async createAppointment(c: Context, organizationId: string, data: any) {
         try {
             const scheduledAt = new Date(data.scheduledAt);
             const endTime = new Date(scheduledAt.getTime() + (data.duration || 60) * 60000);
@@ -69,16 +71,21 @@ export const AppointmentService = {
                 include: { customer: true, asset: true }
             });
 
-            // Actualizar nextAppointmentAt del asset si hay assetId
+            // Secure update: ensure asset belongs to the same organization
             if (data.assetId) {
-                await prisma.asset.update({
-                    where: { id: data.assetId },
+                await prisma.asset.updateMany({
+                    where: { id: data.assetId, organizationId },
                     data: {
                         nextAppointmentAt: scheduledAt,
                         nextAppointmentNote: data.title
                     }
                 });
             }
+
+            await recordAudit(c, 'CREATE', 'Appointment', appointment.id, { 
+                title: appointment.title, 
+                scheduledAt: appointment.scheduledAt 
+            });
 
             return appointment;
         } catch (error) {
@@ -87,7 +94,7 @@ export const AppointmentService = {
         }
     },
 
-    async updateAppointment(organizationId: string, id: string, data: any) {
+    async updateAppointment(c: Context, organizationId: string, id: string, data: any) {
         try {
             const updateData: any = { ...data };
 
@@ -107,34 +114,64 @@ export const AppointmentService = {
                 }
             }
 
-            return await prisma.appointment.update({
+            const updated = await prisma.appointment.updateMany({
                 where: { id, organizationId },
                 data: updateData,
+            });
+
+            if (updated.count === 0) {
+                throw new HTTPException(404, { message: 'Appointment not found' });
+            }
+
+            const appointment = await prisma.appointment.findFirst({
+                where: { id, organizationId },
                 include: { customer: true, asset: true }
             });
+
+            await recordAudit(c, 'UPDATE', 'Appointment', id, data);
+
+            return appointment;
         } catch (error) {
             console.error('[AppointmentService] Error updating appointment:', error);
             throw new HTTPException(500, { message: 'Failed to update appointment' });
         }
     },
 
-    async confirmAppointment(organizationId: string, id: string) {
-        return prisma.appointment.update({
+    async confirmAppointment(c: Context, organizationId: string, id: string) {
+        const updated = await prisma.appointment.updateMany({
             where: { id, organizationId },
             data: {
                 status: 'CONFIRMED',
                 confirmedAt: new Date(),
             }
         });
+
+        if (updated.count === 0) {
+            throw new HTTPException(404, { message: 'Appointment not found' });
+        }
+
+        await recordAudit(c, 'UPDATE', 'Appointment', id, { status: 'CONFIRMED' });
+
+        return prisma.appointment.findFirst({
+            where: { id, organizationId }
+        });
     },
 
-    async deleteAppointment(organizationId: string, id: string) {
+    async deleteAppointment(c: Context, organizationId: string, id: string) {
         try {
-            await prisma.appointment.delete({
+            const deleted = await prisma.appointment.deleteMany({
                 where: { id, organizationId }
             });
+
+            if (deleted.count === 0) {
+                throw new HTTPException(404, { message: 'Appointment not found' });
+            }
+
+            await recordAudit(c, 'DELETE', 'Appointment', id);
+
             return { success: true };
         } catch (error) {
+            console.error('[AppointmentService] Error deleting appointment:', error);
             throw new HTTPException(500, { message: 'Failed to delete appointment' });
         }
     }

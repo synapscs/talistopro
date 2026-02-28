@@ -1,71 +1,157 @@
-import { Hono } from 'hono';
-import { z } from 'zod';
-import { zValidator } from '@hono/zod-validator';
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { PaymentService } from '../../services/payments';
-import { recordAudit } from '../../lib/audit';
 import type { AppEnv } from '../../types/env';
 
-const paymentSchema = z.object({
-    orderId: z.string(),
+const payments = new OpenAPIHono<AppEnv>();
+
+// --- SCHEMAS ---
+
+const PaymentMethodSchema = z.enum(['CASH', 'CARD', 'TRANSFER', 'MOBILE_PAYMENT', 'ZELLE', 'OTHER']).openapi('PaymentMethod');
+const CurrencySchema = z.enum(['USD', 'VES', 'COP', 'MXN']).openapi('Currency');
+
+const PaymentSchema = z.object({
+    id: z.string().uuid(),
     amount: z.number().min(0),
-    currency: z.enum(['USD', 'VES', 'COP', 'MXN']).default('USD'),
+    amountUsd: z.number().min(0),
+    currency: CurrencySchema,
+    exchangeRate: z.number().min(0).nullable(),
+    method: PaymentMethodSchema,
+    reference: z.string().optional().nullable(),
+    notes: z.string().optional().nullable(),
+    serviceOrderId: z.string().uuid(),
+    createdAt: z.date().or(z.string()),
+}).openapi('Payment');
+
+const CreatePaymentSchema = z.object({
+    orderId: z.string().uuid(),
+    amount: z.number().min(0),
+    currency: CurrencySchema.default('USD'),
     exchangeRate: z.number().min(0).optional(),
-    method: z.enum(['CASH', 'CARD', 'TRANSFER', 'MOBILE_PAYMENT', 'ZELLE', 'OTHER']),
+    method: PaymentMethodSchema,
     reference: z.string().optional(),
     notes: z.string().optional(),
+}).openapi('CreatePayment');
+
+const UpdatePaymentSchema = CreatePaymentSchema.partial().openapi('UpdatePayment');
+
+const SuccessSchema = z.object({ success: z.boolean() }).openapi('Success');
+const ErrorSchema = z.object({ error: z.string() }).openapi('Error');
+
+// --- ROUTES ---
+
+const listRoute = createRoute({
+    method: 'get',
+    path: '/',
+    request: {
+        query: z.object({
+            orderId: z.string().uuid().optional(),
+        }),
+    },
+    responses: {
+        200: {
+            content: { 'application/json': { schema: z.array(PaymentSchema) } },
+            description: 'Listado de pagos',
+        },
+    },
 });
 
-const payments = new Hono<AppEnv>()
-    .get('/', async (c) => {
-        const orgId = c.get('orgId');
-        const orderId = c.req.query('orderId');
+const getOneRoute = createRoute({
+    method: 'get',
+    path: '/{id}',
+    request: {
+        params: z.object({ id: z.string().uuid() }),
+    },
+    responses: {
+        200: {
+            content: { 'application/json': { schema: PaymentSchema } },
+            description: 'Detalle del pago',
+        },
+        404: { content: { 'application/json': { schema: ErrorSchema } }, description: 'No encontrado' },
+    },
+});
 
-        const list = await PaymentService.getPayments(orgId, orderId);
-        return c.json(list);
-    })
+const createRouteDef = createRoute({
+    method: 'post',
+    path: '/',
+    request: {
+        body: { content: { 'application/json': { schema: CreatePaymentSchema } } },
+    },
+    responses: {
+        201: {
+            content: { 'application/json': { schema: PaymentSchema } },
+            description: 'Pago creado',
+        },
+    },
+});
 
-    .get('/:id', async (c) => {
-        const orgId = c.get('orgId');
-        const id = c.req.param('id');
+const updateRoute = createRoute({
+    method: 'put',
+    path: '/{id}',
+    request: {
+        params: z.object({ id: z.string().uuid() }),
+        body: { content: { 'application/json': { schema: UpdatePaymentSchema } } },
+    },
+    responses: {
+        200: {
+            content: { 'application/json': { schema: PaymentSchema } },
+            description: 'Pago actualizado',
+        },
+        404: { content: { 'application/json': { schema: ErrorSchema } }, description: 'No encontrado' },
+    },
+});
 
-        const payment = await PaymentService.getPaymentById(orgId, id);
+const deleteRoute = createRoute({
+    method: 'delete',
+    path: '/{id}',
+    request: {
+        params: z.object({ id: z.string().uuid() }),
+    },
+    responses: {
+        200: {
+            content: { 'application/json': { schema: SuccessSchema } },
+            description: 'Pago eliminado',
+        },
+        404: { content: { 'application/json': { schema: ErrorSchema } }, description: 'No encontrado' },
+    },
+});
 
-        if (!payment) {
-            return c.json({ error: 'Pago no encontrado' }, 404);
-        }
+// --- IMPLEMENTATION ---
 
-        return c.json(payment);
-    })
+payments.openapi(listRoute, async (c) => {
+    const orgId = c.get('orgId');
+    const { orderId } = c.req.valid('query');
+    const list = await PaymentService.getPayments(orgId, orderId);
+    return c.json(list as any, 200);
+});
 
-    .post('/', zValidator('json', paymentSchema), async (c) => {
-        const data = c.req.valid('json');
-        const orgId = c.get('orgId');
+payments.openapi(getOneRoute, async (c) => {
+    const orgId = c.get('orgId');
+    const { id } = c.req.valid('param');
+    const payment = await PaymentService.getPaymentById(orgId, id);
+    if (!payment) return c.json({ error: 'Not found' }, 404);
+    return c.json(payment as any, 200);
+});
 
-        const payment = await PaymentService.createPayment(orgId, data);
-        await recordAudit(c, 'CREATE', 'Payment', payment.id, { amount: data.amount, method: data.method });
+payments.openapi(createRouteDef, async (c) => {
+    const orgId = c.get('orgId');
+    const data = c.req.valid('json');
+    const payment = await PaymentService.createPayment(c as any, orgId, data);
+    return c.json(payment as any, 201);
+});
 
-        return c.json(payment, 201);
-    })
+payments.openapi(updateRoute, async (c) => {
+    const orgId = c.get('orgId');
+    const { id } = c.req.valid('param');
+    const data = c.req.valid('json');
+    const payment = await PaymentService.updatePayment(c as any, orgId, id, data);
+    return c.json(payment as any, 200);
+});
 
-    .put('/:id', zValidator('json', paymentSchema.partial()), async (c) => {
-        const id = c.req.param('id');
-        const data = c.req.valid('json');
-        const orgId = c.get('orgId');
-
-        const payment = await PaymentService.updatePayment(orgId, id, data);
-        await recordAudit(c, 'UPDATE', 'Payment', id, data);
-
-        return c.json(payment);
-    })
-
-    .delete('/:id', async (c) => {
-        const id = c.req.param('id');
-        const orgId = c.get('orgId');
-
-        const result = await PaymentService.deletePayment(orgId, id);
-        await recordAudit(c, 'DELETE', 'Payment', id);
-
-        return c.json(result);
-    });
+payments.openapi(deleteRoute, async (c) => {
+    const orgId = c.get('orgId');
+    const { id } = c.req.valid('param');
+    await PaymentService.deletePayment(orgId, id);
+    return c.json({ success: true }, 200);
+});
 
 export { payments };

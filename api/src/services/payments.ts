@@ -1,6 +1,7 @@
 import { prisma } from '../lib/db';
 import { HTTPException } from 'hono/http-exception';
 import { recordAudit } from '../lib/audit';
+import type { Context } from 'hono';
 
 export const PaymentService = {
     async getPayments(organizationId: string, orderId?: string) {
@@ -44,7 +45,7 @@ export const PaymentService = {
         });
     },
 
-    async createPayment(organizationId: string, data: any) {
+    async createPayment(c: Context, organizationId: string, data: any) {
         try {
             return await prisma.$transaction(async (tx) => {
                 const { orderId, amount, currency, method, reference, notes } = data;
@@ -83,12 +84,18 @@ export const PaymentService = {
                     paymentStatus = 'PARTIAL';
                 }
 
-                await tx.serviceOrder.update({
-                    where: { id: orderId },
+                await tx.serviceOrder.updateMany({
+                    where: { id: orderId, organizationId },
                     data: {
                         amountPaid: newTotalPaid,
                         paymentStatus
                     }
+                });
+
+                await recordAudit(c, 'CREATE', 'Payment', newPayment.id, { 
+                    amount, 
+                    currency, 
+                    orderNumber: order.orderNumber 
                 });
 
                 return await tx.payment.findUnique({
@@ -115,7 +122,7 @@ export const PaymentService = {
         }
     },
 
-    async updatePayment(organizationId: string, id: string, data: any) {
+    async updatePayment(c: Context, organizationId: string, id: string, data: any) {
         try {
             const updated = await prisma.payment.updateMany({
                 where: { id, organizationId },
@@ -141,6 +148,8 @@ export const PaymentService = {
 
             await this.updateOrderPaymentStatus(organizationId, existingPayment.serviceOrderId);
 
+            await recordAudit(c, 'UPDATE', 'Payment', id, data);
+
             return await prisma.payment.findFirst({
                 where: { id, organizationId },
                 include: {
@@ -164,7 +173,7 @@ export const PaymentService = {
         }
     },
 
-    async deletePayment(organizationId: string, id: string) {
+    async deletePayment(c: Context, organizationId: string, id: string) {
         try {
             const existingPayment = await prisma.payment.findFirst({
                 where: { id, organizationId }
@@ -181,6 +190,8 @@ export const PaymentService = {
             });
 
             await this.updateOrderPaymentStatus(organizationId, orderId);
+
+            await recordAudit(c, 'DELETE', 'Payment', id);
 
             return { success: true };
         } catch (error) {
