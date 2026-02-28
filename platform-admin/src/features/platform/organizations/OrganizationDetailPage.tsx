@@ -15,12 +15,12 @@ export default function OrganizationDetailPage() {
   const loadOrganizationDetail = async () => {
     const token = localStorage.getItem('platform_token');
     if (!token) {
-      navigate('/platform/login');
+      navigate('/login');
       return;
     }
 
     try {
-      const response = await fetch(`/api/platform/organizations/${id}`, {
+      const response = await fetch(`http://localhost:3000/api/platform/organizations/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -31,7 +31,7 @@ export default function OrganizationDetailPage() {
       }
 
       if (response.status === 401) {
-        navigate('/platform/login');
+        navigate('/login');
         return;
       }
 
@@ -59,7 +59,7 @@ export default function OrganizationDetailPage() {
       <div className="text-center py-12">
         <p className="text-red-600 mb-4">{error}</p>
         <button
-          onClick={() => navigate('/platform/organizations')}
+          onClick={() => navigate('/organizations')}
           className="text-indigo-600 hover:text-indigo-900"
         >
           Volver a organizaciones
@@ -77,7 +77,7 @@ export default function OrganizationDetailPage() {
       {/* Header */}
       <div>
         <button
-          onClick={() => navigate('/platform/organizations')}
+          onClick={() => navigate('/organizations')}
           className="text-indigo-600 hover:text-indigo-900 text-sm mb-4"
         >
           ← Volver a organizaciones

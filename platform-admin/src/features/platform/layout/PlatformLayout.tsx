@@ -8,7 +8,7 @@ export default function PlatformLayout() {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/platform/login');
+    navigate('/login');
   };
 
   return (
@@ -65,8 +65,8 @@ export default function PlatformLayout() {
 }
 
 const menuItems = [
-  { path: '/platform/dashboard', icon: '📊', label: 'Dashboard' },
-  { path: '/platform/organizations', icon: '🏢', label: 'Organizaciones' },
-  { path: '/platform/subscriptions', icon: '💳', label: 'Suscripciones' },
-  { path: '/platform/billing', icon: '📄', label: 'Facturación' },
-];
+  { path: '/dashboard', icon: '📊', label: 'Dashboard' },
+  { path: '/organizations', icon: '🏢', label: 'Organizaciones' },
+  { path: '/subscriptions', icon: '💳', label: 'Suscripciones' },
+  { path: '/billing', icon: '📄', label: 'Facturación' },
+] as const;

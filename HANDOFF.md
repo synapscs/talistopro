@@ -1,6 +1,6 @@
 # HANDOFF - TaListoPro
 
-> Última actualización: 24 de Febrero, 2026
+> Última actualización: 27 de Febrero, 2026
 
 ## Contexto General
 
@@ -48,6 +48,93 @@ Desarrollar TaListoPro como una aplicación completa de gestión de talleres con
 ## Accomplished
 
 ### Febrero 2026
+
+#### 🐛 Corrección Crítica del Servidor API - 27/02/2026
+
+**Problema Identificado:**
+El servidor API no mostraba el mensaje "Server is running on port 3000" debido a dos errores críticos en `api/src/index.ts`:
+
+1. **Error de Sintaxis**: Línea 43 tenía `(c, => auth.handler(c.req.raw))` sin el parámetro `next`
+2. **Regresión en Estructura**: El archivo `index.ts` (72 líneas) estaba incompleto comparado con `index_old.ts` (102 líneas)
+   - Faltaban imports de todas las rutas tenant
+   - No se registraban las rutas con `app.route()`
+   - Documentación OpenAPI eliminada
+
+**Correcciones Aplicadas:**
+
+1. **Restaurar Imports de Rutas Tenant** (Líneas 7-26):
+   ```typescript
+   import { customers } from "./routes/customers";
+   import { assets } from "./routes/assets";
+   import { orders } from "./routes/orders";
+   // ... etc (14 rutas en total)
+   ```
+
+2. **Corregir Error de Sintaxis** (Línea 58):
+   ```typescript
+   // ANTES: (c, => auth.handler(c.req.raw));
+   // DESPUÉS: (c, next) => auth.handler(c.req.raw));
+   ```
+
+3. **Registrar Rutas con tenantGuard** (Líneas 60-103):
+   ```typescript
+   app.use("/api/customers", tenantGuard);
+   app.use("/api/customers", (c, next) => customers.handler(c.req));
+   
+   app.use("/api/assets", tenantGuard);
+   app.route("/api/assets", assets);
+   
+   // ... similar para todas las rutas tenant
+   ```
+
+4. **Restaurar Documentación OpenAPI** (Líneas 108-121):
+   ```typescript
+   app.doc('/doc', {
+       openapi: '3.0.0',
+       info: {
+           version: '1.0.0',
+           title: 'TaListoPro API',
+           description: 'Gestión de talleres y servicios residenciales E2E Type-Safe API',
+       },
+   });
+
+   app.get('/ui', apiReference({
+       theme: 'mars',
+       url: '/doc',
+   }));
+   ```
+
+5. **Corregir Import de apiReference** (Línea 5):
+   ```typescript
+   // ANTES: from '@scalar/hono/zod-openapi';
+   // DESPUÉS: from '@scalar/hono-api-reference';
+   ```
+
+**Rutas Restauradas y Funcionales:**
+- ✅ `/api/customers` - Clientes
+- ✅ `/api/assets` - Activos
+- ✅ `/api/orders` - Órdenes de servicio
+- ✅ `/api/inventory` - Inventario
+- ✅ `/api/expenses` - Gastos
+- ✅ `/api/settings` - Configuración
+- ✅ `/api/workflow` - Flujo de trabajo
+- ✅ `/api/members` - Miembros
+- ✅ `/api/appointments` - Citas
+- ✅ `/api/dashboard` - Métricas
+- ✅ `/api/upload` - Archivos
+- ✅ `/api/categories` - Categorías
+- ✅ `/api/notifications` - Notificaciones
+- ✅ `/api/payments` - Pagos
+- ✅ `/api/invoices` - Facturas
+
+**Verificación:**
+- ✅ Servidor inicia correctamente
+- ✅ Muestra "Server is running on port 3000"
+- ✅ Endpoint `/` responde: "TaListoPro API is running! 🚀"
+- ✅ Documentación OpenAPI disponible en `/doc`
+- ✅ Rutas responden con códigos HTTP correctos (401 para rutas protegidas)
+
+**Impacto:** Esta corrección reestableció completamente la funcionalidad del servidor API que fue perdida en el commit "feat(platform-admin): implement Phase 2 - Backend Services".
 
 #### 🔒 Auditoría de Seguridad y Correcciones - 24/02/2026
 
@@ -320,3 +407,4 @@ cd api && npx tsc --noEmit
 |:------|:--------|:------------|
 | 23/02/2026 | HANDOFF_2026-02-23.md | Módulo de citas, convertToOrder, mejoras UI |
 | 24/02/2026 | HANDOFF.md | Auditoría seguridad, correcciones críticas |
+| 27/02/2026 | HANDOFF.md | **CRÍTICO**: Corrección servidor API - restauración de rutas tenant y documentación OpenAPI |

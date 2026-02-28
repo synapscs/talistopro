@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Navigate } from '@tanstack/react-router';
-import { Lock, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Lock } from 'lucide-react';
+import { apiClient } from '../lib/api-client';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -15,24 +16,19 @@ export default function Login() {
         setError('');
 
         try {
-            const response = await fetch('http://localhost:3000/api/platform/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-            });
-
-            const data = await response.json();
+            const data = await apiClient.login(email, password);
 
             if (data.success) {
                 const { user, token } = data;
                 localStorage.setItem('platform_token', token);
                 localStorage.setItem('platform_user', JSON.stringify(user));
-                navigate('/admin/dashboard');
+                navigate('/platform/dashboard');
             } else {
                 setError(data.error || 'Error al iniciar sesión');
             }
-        } catch (err: {
-            setError('Error de conexión');
+        } catch (err: any) {
+            console.error('Login error:', err);
+            setError(err.message || 'Error de conexión');
         } finally {
             setIsLoading(false);
         }
@@ -52,7 +48,7 @@ export default function Login() {
                 <form onSubmit={handleSubmit} className="w-full space-y-6">
                     <div className="text-center mb-6">
                         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                            Iniciar Sessión
+                            Iniciar Sesión
                         </h1>
                         <p className="text-sm text-slate-600 dark:text-slate-400">
                             Admin Portal
@@ -79,7 +75,7 @@ export default function Login() {
                             onChange={(e) => setEmail(e.target.value)}
                             disabled={isLoading}
                             className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:border-slate-700"
-                            placeholder="admin@talinto.pro"
+                            placeholder="admin@talisto.pro"
                             required
                         />
                     </div>
@@ -95,7 +91,7 @@ export default function Login() {
                             onChange={(e) => setPassword(e.target.value)}
                             disabled={isLoading}
                             className="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:border-slate-700"
-                            placeholder="admin123"
+                            placeholder="changeme123"
                             required
                         />
                     </div>
@@ -103,7 +99,7 @@ export default function Login() {
                     <button
                         type="submit"
                         disabled={isLoading || !email || !password}
-                        className="w-full py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 text-white font-bold py-2.5 rounded-lg transition-colors"
+                        className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-bold rounded-lg transition-colors"
                     >
                         {isLoading ? 'Iniciando...' : 'Iniciar Sesión'}
                     </button>

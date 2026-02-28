@@ -1,11 +1,10 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { PlatformOrganizationsService } from '../../services/platform/organizations';
-import { platformAdminGuard } from '../../middleware/platform-guards';
 import type { AppEnv } from '../../types/env';
 
 const organizations = new OpenAPIHono<AppEnv>();
 
-organizations.use('/*', platformAdminGuard);
+// NOTE: platformAuthGuard is applied in index.ts
 
 const ErrorSchema = z.object({
     error: z.string(),

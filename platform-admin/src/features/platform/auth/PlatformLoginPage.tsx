@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlatformAuthStore } from '../../../stores/usePlatformAuthStore';
+import { apiClient } from '../../../lib/api-client';
 
 export default function PlatformLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = usePlatformAuthStore();
+  const { loginWithToken } = usePlatformAuthStore();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -15,11 +16,25 @@ export default function PlatformLoginPage() {
     setError('');
     setLoading(true);
 
+    // Limpiar tokens antiguos antes de login
+    localStorage.removeItem('platform_token');
+    localStorage.removeItem('platform_user');
+
     try {
-      await login(email, password);
-      navigate('/platform/dashboard');
+      const data = await apiClient.login(email, password);
+
+      if (data.success) {
+        const { user, token } = data;
+        localStorage.setItem('platform_token', token);
+        localStorage.setItem('platform_user', JSON.stringify(user));
+        loginWithToken(token, user);
+        navigate('/dashboard');
+      } else {
+        setError(data.error || 'Error al iniciar sesión');
+      }
     } catch (err: any) {
-      setError(err.message || 'Error en login');
+      console.error('Login error:', err);
+      setError(err.message || 'Error de conexión');
     } finally {
       setLoading(false);
     }

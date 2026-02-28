@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { API_URL } from '../../../lib/api-client';
 
 export default function PlatformDashboard() {
   const [stats, setStats] = useState({
@@ -8,6 +9,9 @@ export default function PlatformDashboard() {
     monthlyRevenue: 0
   });
 
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
   useEffect(() => {
     // Cargar estadísticas
     loadStats();
@@ -15,15 +19,29 @@ export default function PlatformDashboard() {
 
   const loadStats = async () => {
     const token = localStorage.getItem('platform_token');
-    const response = await fetch('/api/platform/organizations?limit=1000', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
     
-    if (response.ok) {
+    if (!token) {
+      setError('No hay sesión activa');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/platform/organizations?limit=1000`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to load stats:', response.status, errorText);
+        throw new Error(`Error ${response.status}: ${errorText}`);
+      }
+
       const data = await response.json();
-      
+
       setStats({
         totalOrganizations: data.total,
         activeSubscriptions: data.data.filter((org: any) => org.subscriptionStatus === 'active').length,
@@ -32,6 +50,11 @@ export default function PlatformDashboard() {
           return sum + Number(org.plan?.monthlyPrice || 0);
         }, 0)
       });
+    } catch (err: any) {
+      console.error('Error loading stats:', err);
+      setError(err.message || 'Error al cargar estadísticas');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -79,29 +102,29 @@ export default function PlatformDashboard() {
         </p>
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-2xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold mb-4">Acciones Rápidas</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <ActionButton
-            label="Ver Organizaciones"
-            href="/platform/organizations"
-            icon="🏢"
-          />
-          <ActionButton
-            label="Ver Suscripciones"
-            href="/platform/subscriptions"
-            icon="💳"
-            disabled={true}
-          />
-          <ActionButton
-            label="Ver Facturación"
-            href="/platform/billing"
-            icon="📄"
-            disabled={true}
-          />
+        {/* Quick Actions */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <h2 className="text-xl font-semibold mb-4">Acciones Rápidas</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ActionButton
+              label="Ver Organizaciones"
+              href="/organizations"
+              icon="🏢"
+            />
+            <ActionButton
+              label="Ver Suscripciones"
+              href="/subscriptions"
+              icon="💳"
+              disabled={true}
+            />
+            <ActionButton
+              label="Ver Facturación"
+              href="/billing"
+              icon="📄"
+              disabled={true}
+            />
+          </div>
         </div>
-      </div>
     </div>
   );
 }

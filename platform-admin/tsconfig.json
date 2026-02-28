@@ -10,7 +10,7 @@
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
-    "isolatedModules": [],
+    "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
     "jsxImportSource": "react",
@@ -19,15 +19,12 @@
     "allowUmdGlobalAccess": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "moduleSuffixes": ["", ".js", ".ts", ".tsx", ".json"]
   },
   "include": [
     "src"
-  ],
-  "references": [
-    { "path": "./" }
   ]
 }

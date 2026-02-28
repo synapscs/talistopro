@@ -8,9 +8,11 @@ import { platformAuthRouter } from "./routes/platform/auth";
 import { platformAuthGuard } from "./middleware/platform-auth";
 import { platformSubscriptionsRouter } from "./routes/platform/subscriptions";
 import { platformBillingRouter } from "./routes/platform/billing";
+import { debug } from "./routes/platform/debug";
 
 const app = new OpenAPIHono();
 
+// Cors
 app.use("*", cors({
     origin: (origin) => origin,
     allowHeaders: ["Content-Type", "Authorization", "X-Requested-With", "better-auth-agent"],
@@ -20,16 +22,27 @@ app.use("*", cors({
     credentials: true,
 }));
 
+// ==========================================
+// PLATFORM ROUTES
+// ==========================================
 app.route("/api/platform/auth", platformAuthRouter);
+
+app.use("/api/platform/debug", platformAuthGuard);
+app.route("/api/platform/debug", debug);
+
 app.use("/api/platform/organizations", platformAuthGuard);
 app.route("/api/platform/organizations", organizations);
+
 app.use("/api/platform/subscriptions", platformAuthGuard);
 app.route("/api/platform/subscriptions", platformSubscriptionsRouter);
+
 app.use("/api/platform/billing", platformAuthGuard);
 app.route("/api/platform/billing", platformBillingRouter);
 
+// Root endpoint
 app.get("/", (c) => c.text("TaListoPro API is running! 🚀"));
 
+// OpenAPI Documentation
 app.doc('/doc', {
     openapi: '3.0.0',
     info: {

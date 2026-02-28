@@ -2,7 +2,27 @@ import { Building2, Users, BarChart3, TrendingUp, Activity } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../stores/useAuthStore';
 
-const mockOrganizations = [
+interface Organization {
+    id: string;
+    name: string;
+    slug: string;
+    businessType: string;
+    country: string;
+    plan: { name: string };
+    subscriptionStatus: string;
+    stats: { members: number; orders: number; revenue: number; activeOrders: number };
+}
+
+interface Stats {
+    totalOrganizations: number;
+    totalUsers: number;
+    activeSubscriptions: number;
+    totalRevenue: number;
+    activeOrders: number;
+    churnRate: number;
+}
+
+const mockOrganizations: Organization[] = [
     {
         id: '1',
         name: 'Taller Central - Mecánica Valentina',
@@ -25,7 +45,7 @@ const mockOrganizations = [
     },
 ];
 
-const mockStats = {
+const mockStats: Stats = {
     totalOrganizations: 3,
     totalUsers: 12,
     activeSubscriptions: 3,
@@ -37,14 +57,14 @@ const mockStats = {
 export function Dashboard() {
     const { user } = useAuthStore();
 
-    const { data: stats } = useQuery({
+    const { data: stats } = useQuery<Stats>({
         queryKey: ['platform-stats'],
         queryFn: async () => {
             return new Promise(resolve => setTimeout(() => resolve(mockStats), 500));
         },
     });
 
-    const { data: organizations } = useQuery({
+    const { data: organizations } = useQuery<Organization[]>({
         queryKey: ['platform-organizations'],
         queryFn: async () => {
             return new Promise(resolve => setTimeout(() => resolve(mockOrganizations), 500));
@@ -82,7 +102,7 @@ export function Dashboard() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {(organizations || []).map((org: any) => (
+                                {(organizations || []).map((org) => (
                                     <tr key={org.id} className="border-b border-slate-100">
                                         <td className="py-3 text-sm font-medium text-slate-900">{org.name}</td>
                                         <td className="py-3 text-sm text-slate-600">{org.plan?.name || 'N/A'}</td>

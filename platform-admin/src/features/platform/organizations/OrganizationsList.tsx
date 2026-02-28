@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_URL } from '../../../lib/api-client';
 
 export default function OrganizationsList() {
   const [organizations, setOrganizations] = useState<any[]>([]);
@@ -19,7 +20,7 @@ export default function OrganizationsList() {
     setLoading(true);
     const token = localStorage.getItem('platform_token');
     if (!token) {
-      navigate('/platform/login');
+      navigate('/login');
       return;
     }
 
@@ -29,12 +30,12 @@ export default function OrganizationsList() {
     if (filters.plan) params.set('plan', filters.plan);
 
     try {
-      const response = await fetch(`/api/platform/organizations?${params}`, {
+      const response = await fetch(`${API_URL}/api/platform/organizations?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       if (response.status === 401) {
-        navigate('/platform/login');
+        navigate('/login');
         return;
       }
 
@@ -165,7 +166,7 @@ export default function OrganizationsList() {
                   <td className="px-6 py-4">
                     <button
                       className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
-                      onClick={() => navigate(`/platform/organizations/${org.id}`)}
+                      onClick={() => navigate(`/organizations/${org.id}`)}
                     >
                       Ver detalle
                     </button>
