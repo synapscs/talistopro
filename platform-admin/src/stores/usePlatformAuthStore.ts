@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { API_URL } from '../lib/api-client';
+// @ts-ignore - Hono client types
+import { client } from '../lib/api-client';
 
 interface PlatformAuthState {
   isAuthenticated: boolean;
@@ -28,9 +29,18 @@ export const usePlatformAuthStore = create<PlatformAuthState>((set, get) => ({
 
   logout: async () => {
     try {
-      await fetch(`${API_URL}/api/platform/auth/logout`, {
-        method: 'POST'
-      });
+      // @ts-expect-error - Hono client type inference issue
+      const res = await client.api.platform.auth.logout.$post(
+        undefined,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+      if (res.status !== 200) {
+        console.error('Logout failed:', await res.text());
+      }
     } catch (err) {
       console.error('Logout error:', err);
     }
@@ -40,38 +50,55 @@ export const usePlatformAuthStore = create<PlatformAuthState>((set, get) => ({
   },
 
   me: async () => {
+    console.log('[usePlatformAuthStore] me() called');
     const token = localStorage.getItem('platform_token');
+    console.log('[usePlatformAuthStore] Token from localStorage:', token ? 'EXISTS' : 'NOT FOUND');
+
     if (!token) {
+      console.log('[usePlatformAuthStore] No token found, clearing session');
       set({ isAuthenticated: false, user: null, token: null });
       return;
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/platform/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      console.log('[usePlatformAuthStore] Calling /api/platform/auth/me with token');
+      console.log('[usePlatformAuthStore] Token starts with:', token.substring(0, 50) + '...');
+      console.log('[usePlatformAuthStore] Token length:', token.length);
 
-      if (!response.ok) {
-        console.warn('Token verification failed, clearing session');
+      // @ts-expect-error - Hono client type inference issue
+      const res = await client.api.platform.auth.me.$get(
+        undefined,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+
+      console.log('[usePlatformAuthStore] Response status:', res.status);
+
+      if (res.status !== 200) {
+        console.warn('[usePlatformAuthStore] Token verification failed, clearing session');
+        console.warn('[usePlatformAuthStore] Response text:', await res.text());
         localStorage.removeItem('platform_token');
         localStorage.removeItem('platform_user');
         set({ isAuthenticated: false, user: null, token: null });
         return;
       }
 
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Invalid response format');
-      }
+      const data = await res.json();
+      console.log('[usePlatformAuthStore] Response data:', data);
 
-      const data = await response.json();
       if (!data.success) {
+        console.log('[usePlatformAuthStore] Success field false, clearing session');
         localStorage.removeItem('platform_token');
         localStorage.removeItem('platform_user');
         set({ isAuthenticated: false, user: null, token: null });
         return;
       }
 
+      console.log('[usePlatformAuthStore] Setting user state');
       set({
         isAuthenticated: true,
         user: data.user,

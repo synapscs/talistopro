@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test RPC Headers</title>
+</head>
+<body>
+    <h1>Test Hono Client RPC Headers</h1>
+    <pre id="output"></pre>
+
+    <script type="module">
+        import { hc } from 'https://esm.sh/hono/client';
+
+        const output = document.getElementById('output');
+        const API_URL = 'http://localhost:3000';
+
+        const client = hc(API_URL, {
+            // Test with different configurations
+        });
+
+        async function testHeaders() {
+            const token = localStorage.getItem('platform_token');
+            output.textContent = 'Token: ' + (token ? 'EXISTS' : 'NOT FOUND') + '\n';
+
+            try {
+                const res = await client.api.platform.auth.me.$get({
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+
+                output.textContent += 'Response status: ' + res.status + '\n';
+                const data = await res.json();
+                output.textContent += 'Response: ' + JSON.stringify(data) + '\n';
+            } catch (err) {
+                output.textContent += 'Error: ' + err.message + '\n';
+            }
+        }
+
+        // Test first without token
+        await testHeaders();
+    </script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { API_URL } from '../../../lib/api-client';
+// @ts-ignore - Hono client types
+import { client } from '../../../lib/api-client';
 import ChangePlanModal from './components/ChangePlanModal';
 
 export default function SubscriptionDetailPage() {
@@ -22,16 +23,24 @@ export default function SubscriptionDetailPage() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/platform/organizations/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // @ts-expect-error - Hono client type inference issue
+      const res = await client.api.platform.organizations[':id'].$get(
+        {
+          param: { id }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
 
-      if (response.status === 401) {
+      if (res.status === 401) {
         navigate('/login');
         return;
       }
 
-      const data = await response.json();
+      const data = await res.json();
       setSubscription(data);
       setLoading(false);
     } catch (error) {
@@ -43,16 +52,19 @@ export default function SubscriptionDetailPage() {
   const handlePlanChange = async (newPlanId: string) => {
     const token = localStorage.getItem('platform_token');
     try {
-      const response = await fetch(`${API_URL}/api/platform/subscriptions/${id}/change-plan`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      // @ts-expect-error - Hono client type inference issue
+      const res = await client.api.platform.subscriptions[':id'].change.$post(
+        {
+          json: { newPlanId }
         },
-        body: JSON.stringify({ newPlanId })
-      });
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
 
-      if (response.ok) {
+      if (res.ok) {
         await loadSubscriptionDetail();
         setShowChangePlan(false);
       }

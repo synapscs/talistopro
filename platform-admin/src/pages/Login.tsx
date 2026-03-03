@@ -1,32 +1,47 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock } from 'lucide-react';
-import { apiClient } from '../lib/api-client';
+// @ts-ignore - Hono client types
+import { client } from '../lib/api-client';
 
 export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [redirecting, setRedirecting] = useState(false);
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
+        setRedirecting(true);
         setError('');
 
         try {
-            const data = await apiClient.login(email, password);
+            // @ts-expect-error - Hono client type inference issue
+            const res = await client.api.platform.auth.login.$post({
+                json: { email, password }
+            });
+
+            const data = await res.json();
 
             if (data.success) {
                 const { user, token } = data;
                 localStorage.setItem('platform_token', token);
                 localStorage.setItem('platform_user', JSON.stringify(user));
+
+                // Wait for token to be saved in localStorage
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                setRedirecting(false);
                 navigate('/platform/dashboard');
             } else {
+                setRedirecting(false);
                 setError(data.error || 'Error al iniciar sesión');
             }
         } catch (err: any) {
+            setRedirecting(false);
             console.error('Login error:', err);
             setError(err.message || 'Error de conexión');
         } finally {
@@ -98,10 +113,10 @@ export default function Login() {
 
                     <button
                         type="submit"
-                        disabled={isLoading || !email || !password}
+                        disabled={isLoading || redirecting || !email || !password}
                         className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-bold rounded-lg transition-colors"
                     >
-                        {isLoading ? 'Iniciando...' : 'Iniciar Sesión'}
+                        {isLoading || redirecting ? 'Verificando sesión...' : 'Iniciar Sesión'}
                     </button>
                 </form>
             </div>

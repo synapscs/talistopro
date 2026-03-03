@@ -5,7 +5,7 @@ import type { AppEnv } from '../../types/env';
 // Minimal platform-admin auth router with login/me/logout using token
 const app = new OpenAPIHono<AppEnv>();
 
-// Lightweight payload for login
+// Login endpoint - accepts POST to /api/platform/auth
 app.post('/login', async (c) => {
   const body = await c.req.json().catch(() => ({} as any));
   const email = body?.email;
@@ -23,19 +23,34 @@ app.post('/login', async (c) => {
   return c.json({ success: true, token, user: { email } });
 });
 
+// Get current user - accepts GET to /api/platform/auth
 app.get('/me', async (c) => {
   const authHeader = c.req.header('Authorization');
+  console.log('[API] /me - Authorization header:', authHeader);
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('[API] /me - Invalid or missing Authorization header');
+    console.log('[API] /me - Full headers:', JSON.stringify(c.req.header()));
     return c.json({ success: false, error: 'Unauthorized' }, 401);
   }
+
   const token = authHeader.slice(7);
+  console.log('[API] /me - Token received, length:', token.length);
+  console.log('[API] /me - Token starts with:', token.substring(0, 50));
+
   const payload = PlatformAuthService.verifyToken(token);
+  console.log('[API] /me - Token verification result:', payload ? 'SUCCESS' : 'FAILED');
+
   if (!payload) {
+    console.log('[API] /me - Token verification failed');
     return c.json({ success: false, error: 'Unauthorized' }, 401);
   }
+
+  console.log('[API] /me - User:', payload.email);
   return c.json({ success: true, user: { email: payload.email } });
 });
 
+// Logout endpoint - accepts POST to /api/platform/auth/logout
 app.post('/logout', async (c) => {
   // Stateless: logout handled client-side by discarding token
   return c.json({ success: true });

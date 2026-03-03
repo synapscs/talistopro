@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+// @ts-ignore - Hono client types
+import { client } from '../../../lib/api-client';
 
 export default function OrganizationDetailPage() {
   const { id } = useParams();
@@ -20,22 +22,30 @@ export default function OrganizationDetailPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3000/api/platform/organizations/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // @ts-expect-error - Hono client type inference issue
+      const res = await client.api.platform.organizations[':id'].$get(
+        {
+          param: { id }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
 
-      if (response.status === 404) {
+      if (res.status === 404) {
         setError('Organización no encontrada');
         setLoading(false);
         return;
       }
 
-      if (response.status === 401) {
+      if (res.status === 401) {
         navigate('/login');
         return;
       }
 
-      const data = await response.json();
+      const data = await res.json();
       setOrganization(data);
       setLoading(false);
     } catch (error) {

@@ -12,6 +12,9 @@
     "db:migrate": "prisma migrate dev"
   },
   "devDependencies": {
-    "prisma": "^5.x.x"
+    "prisma": "^5.22.0"
+  },
+  "dependencies": {
+    "pg": "^8.19.0"
   }
 }

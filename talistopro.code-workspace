@@ -1,0 +1,9 @@
+{
+	"folders": [
+		{
+			"uri": "vscode-remote://wsl+ubuntu/home/victor_ignacio/proyectos/talistopro"
+		}
+	],
+	"remoteAuthority": "wsl+ubuntu",
+	"settings": {}
+}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { API_URL } from '../../../lib/api-client';
+// @ts-ignore - Hono client types
+import { client } from '../../../lib/api-client';
 import InvoiceStatusBadge from './components/InvoiceStatusBadge';
 
 export default function InvoiceDetailPage() {
@@ -21,16 +22,24 @@ export default function InvoiceDetailPage() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/platform/billing/invoices/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // @ts-expect-error - Hono client type inference issue
+      const res = await client.api.platform.billing.invoices[':id'].$get(
+        {
+          param: { id }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
 
-      if (response.status === 401) {
+      if (res.status === 401) {
         navigate('/login');
         return;
       }
 
-      const data = await response.json();
+      const data = await res.json();
       setInvoice(data);
       setLoading(false);
     } catch (error) {
@@ -44,15 +53,17 @@ export default function InvoiceDetailPage() {
     if (!token) return;
 
     try {
-      const response = await fetch(`${API_URL}/api/platform/billing/invoices/${id}/pay`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      // @ts-expect-error - Hono client type inference issue
+      const res = await client.api.platform.billing.invoices[':id'].pay.$post(
+        undefined,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         }
-      });
+      );
 
-      if (response.ok) {
+      if (res.ok) {
         await loadInvoiceDetail();
       }
     } catch (error) {

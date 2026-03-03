@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_URL } from '../../../lib/api-client';
+// @ts-ignore - Hono client types
+import { client } from '../../../lib/api-client';
 import GenerateInvoiceModal from './components/GenerateInvoiceModal';
 import InvoiceStatusBadge from './components/InvoiceStatusBadge';
 
@@ -27,21 +28,28 @@ export default function InvoicesList() {
     }
 
     try {
-      const params = new URLSearchParams();
-      if (filters.status) params.set('status', filters.status);
-      params.set('page', String(filters.page));
-      params.set('limit', '20');
+      // @ts-expect-error - Hono client type inference issue
+      const res = await client.api.platform.billing.invoices.$get(
+        {
+          query: {
+            status: filters.status || undefined,
+            page: String(filters.page),
+            limit: '20'
+          }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
 
-      const response = await fetch(`${API_URL}/api/platform/billing/invoices?${params}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.status === 401) {
+      if (res.status === 401) {
         navigate('/login');
         return;
       }
 
-      const data = await response.json();
+      const data = await res.json();
       setInvoices(data.data || []);
     } catch (error) {
       console.error('Error loading invoices:', error);
@@ -50,24 +58,32 @@ export default function InvoicesList() {
     }
   };
 
-  const handleGenerateInvoice = async ({ year, month }: { year: number; month: number }) => {
+  const handleGenerateInvoice = async (invoiceData: { year: number; month: number }) => {
     const token = localStorage.getItem('platform_token');
     if (!token) return;
 
     try {
-      const response = await fetch(`${API_URL}/api/platform/billing/invoices`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      // @ts-expect-error - Hono client type inference issue
+      const res = await client.api.platform.billing.invoices.$post(
+        {
+          json: invoiceData
         },
-        body: JSON.stringify({ year, month })
-      });
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
 
-      if (response.ok) {
-        await loadInvoices();
-        setShowGenerate(false);
+      if (res.status === 401) {
+        navigate('/login');
+        return;
       }
+
+      const data = await res.json();
+      setInvoices([data, ...(invoices || [])]);
+      setShowGenerate(false);
+      await loadInvoices();
     } catch (error) {
       console.error('Error generating invoice:', error);
     }

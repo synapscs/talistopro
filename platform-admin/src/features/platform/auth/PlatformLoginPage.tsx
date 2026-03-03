@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePlatformAuthStore } from '../../../stores/usePlatformAuthStore';
-import { apiClient } from '../../../lib/api-client';
+// @ts-ignore - Hono client types
+import { client } from '../../../lib/api-client';
 
 export default function PlatformLoginPage() {
   const [email, setEmail] = useState('');
@@ -21,13 +22,26 @@ export default function PlatformLoginPage() {
     localStorage.removeItem('platform_user');
 
     try {
-      const data = await apiClient.login(email, password);
+      // @ts-expect-error - Hono client type inference issue
+      const res = await client.api.platform.auth.login.$post(
+        {
+          json: { email, password }
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+
+      const data = await res.json();
 
       if (data.success) {
         const { user, token } = data;
         localStorage.setItem('platform_token', token);
         localStorage.setItem('platform_user', JSON.stringify(user));
         loginWithToken(token, user);
+        // Navigate to dashboard - PlatformProtectedRoute will verify authentication
         navigate('/dashboard');
       } else {
         setError(data.error || 'Error al iniciar sesión');

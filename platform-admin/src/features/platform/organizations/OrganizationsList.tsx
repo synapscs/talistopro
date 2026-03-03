@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_URL } from '../../../lib/api-client';
+// @ts-ignore - Hono client types
+import { client } from '../../../lib/api-client';
 
 export default function OrganizationsList() {
   const [organizations, setOrganizations] = useState<any[]>([]);
@@ -24,22 +25,29 @@ export default function OrganizationsList() {
       return;
     }
 
-    const params = new URLSearchParams();
-    if (filters.search) params.set('search', filters.search);
-    if (filters.status) params.set('status', filters.status);
-    if (filters.plan) params.set('plan', filters.plan);
-
     try {
-      const response = await fetch(`${API_URL}/api/platform/organizations?${params}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // @ts-expect-error - Hono client type inference issue
+      const res = await client.api.platform.organizations.$get(
+        {
+          query: {
+            search: filters.search || undefined,
+            status: filters.status || undefined,
+            plan: filters.plan || undefined,
+          }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
 
-      if (response.status === 401) {
+      if (res.status === 401) {
         navigate('/login');
         return;
       }
 
-      const data = await response.json();
+      const data = await res.json();
       setOrganizations(data.data || []);
     } catch (error) {
       console.error('Error loading organizations:', error);

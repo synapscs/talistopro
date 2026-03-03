@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { API_URL } from '../../../lib/api-client';
+// @ts-ignore - Hono client types
+import { client } from '../../../lib/api-client';
 
 export default function PlatformDashboard() {
   const [stats, setStats] = useState({
@@ -19,7 +20,7 @@ export default function PlatformDashboard() {
 
   const loadStats = async () => {
     const token = localStorage.getItem('platform_token');
-    
+
     if (!token) {
       setError('No hay sesión activa');
       setLoading(false);
@@ -27,20 +28,27 @@ export default function PlatformDashboard() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/platform/organizations?limit=1000`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      // @ts-expect-error - Hono client type inference issue
+      const res = await client.api.platform.organizations.$get(
+        {
+          query: {
+            limit: '1000'
+          }
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         }
-      });
+      );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Failed to load stats:', response.status, errorText);
-        throw new Error(`Error ${response.status}: ${errorText}`);
+      if (res.status !== 200) {
+        const errorText = await res.text();
+        console.error('Failed to load stats:', res.status, errorText);
+        throw new Error(`Error ${res.status}: ${errorText}`);
       }
 
-      const data = await response.json();
+      const data = await res.json();
 
       setStats({
         totalOrganizations: data.total,

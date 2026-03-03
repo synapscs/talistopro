@@ -13,20 +13,46 @@ export default function PlatformProtectedRoute({ children }: Props) {
 
   useEffect(() => {
     let mounted = true;
-    
-    initialize().finally(() => {
-      if (mounted) {
-        setInitializing(false);
+
+    const checkAuth = async () => {
+      const token = localStorage.getItem('platform_token');
+
+      if (!token) {
+        console.log('[PlatformProtectedRoute] No token found, redirecting to login');
+        if (mounted) {
+          setInitializing(false);
+          navigate('/login');
+        }
+        return;
       }
-    });
+
+      console.log('[PlatformProtectedRoute] Token found, verifying...');
+      
+      try {
+        await initialize();
+        
+        if (mounted) {
+          setInitializing(false);
+        }
+      } catch (err) {
+        console.error('[PlatformProtectedRoute] Auth check failed:', err);
+        if (mounted) {
+          setInitializing(false);
+          navigate('/login');
+        }
+      }
+    };
+
+    checkAuth();
 
     return () => {
       mounted = false;
     };
-  }, [initialize]);
+  }, [initialize, navigate]);
 
   useEffect(() => {
     if (!initializing && !isAuthenticated) {
+      console.log('[PlatformProtectedRoute] Not authenticated after check, redirecting to login');
       navigate('/login');
     }
   }, [initializing, isAuthenticated, navigate]);

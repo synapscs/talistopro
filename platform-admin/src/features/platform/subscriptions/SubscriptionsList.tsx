@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_URL } from '../../../lib/api-client';
+// @ts-ignore - Hono client types
+import { client } from '../../../lib/api-client';
 
 export default function SubscriptionsList() {
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
@@ -24,18 +25,24 @@ export default function SubscriptionsList() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/platform/organizations`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // @ts-expect-error - Hono client type inference issue
+      const res = await client.api.platform.organizations.$get(
+        undefined,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
 
-      if (response.status === 401) {
+      if (res.status === 401) {
         navigate('/login');
         return;
       }
 
-      const data = await response.json();
+      const data = await res.json();
       const orgs = data.data || [];
-      
+
       const subscriptionsData = orgs.map((org: any) => ({
         ...org,
         subscriptionId: org.id,
