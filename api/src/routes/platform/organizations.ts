@@ -76,6 +76,17 @@ const UpdateOrganizationSchema = z.object({
     planId: z.string().nullable().optional(),
 }).openapi('UpdateOrganization');
 
+const UpdateOrganizationSettingsSchema = z.object({
+    n8nEnabled: z.boolean().optional(),
+    n8nWebhookUrl: z.string().optional(),
+    n8nEndpointId: z.string().optional(),
+    whatsappEnabled: z.boolean().optional(),
+    evolutionInstance: z.string().optional(),
+    evolutionApiKey: z.string().optional(),
+    evolutionApiToken: z.string().optional(),
+    evolutionUrl: z.string().optional(),
+}).openapi('UpdateOrganizationSettings');
+
 const listRoute = createRoute({
     method: 'get',
     path: '/',
@@ -238,6 +249,37 @@ const usageRoute = createRoute({
     },
 });
 
+const updateSettingsRoute = createRoute({
+    method: 'put',
+    path: '/{id}/settings',
+    request: {
+        params: z.object({
+            id: z.string().openapi({ param: { name: 'id', in: 'path' } }),
+        }),
+        body: {
+            content: {
+                'application/json': {
+                    schema: UpdateOrganizationSettingsSchema,
+                },
+            },
+        },
+    },
+    responses: {
+        200: {
+            content: {
+                'application/json': {
+                    schema: z.any(),
+                },
+            },
+            description: 'Configuración actualizada',
+        },
+        404: {
+            content: { 'application/json': { schema: ErrorSchema } },
+            description: 'Organización no encontrada',
+        },
+    },
+});
+
 organizations.openapi(listRoute, async (c) => {
     const query = c.req.valid('query');
     
@@ -287,6 +329,14 @@ organizations.openapi(usageRoute, async (c) => {
     
     const usage = await PlatformOrganizationsService.getOrganizationUsage(id);
     return c.json(usage, 200);
+});
+
+organizations.openapi(updateSettingsRoute, async (c) => {
+    const { id } = c.req.valid('param');
+    const data = c.req.valid('json');
+    
+    const result = await PlatformOrganizationsService.updateOrganizationSettings(id, data);
+    return c.json(result, 200);
 });
 
 export { organizations };

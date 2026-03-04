@@ -28,6 +28,7 @@ export const PlatformBillingService = {
     const invoice = await prisma.platformInvoice.create({
       data: {
         invoiceNumber,
+        organizationId,
         subscriptionId: org.id,
         monthlyFee: monthlyPrice,
         activationFee: Number(org.plan.activationFee || 0),
@@ -37,6 +38,11 @@ export const PlatformBillingService = {
         periodStart: period.start,
         periodEnd: period.end,
         dueDate: new Date(period.end.getTime() + 7 * 24 * 60 * 60 * 1000)
+      },
+      include: {
+        organization: {
+          include: { plan: true }
+        }
       }
     });
 
@@ -59,7 +65,7 @@ export const PlatformBillingService = {
     }
     
     if (filters?.organizationId) {
-      where.subscriptionId = filters.organizationId;
+      where.organizationId = filters.organizationId;
     }
 
     const skip = filters?.page && filters?.limit ? (filters.page - 1) * filters.limit : 0;
@@ -70,7 +76,16 @@ export const PlatformBillingService = {
         where,
         orderBy: { createdAt: 'desc' },
         skip,
-        take
+        take,
+        include: {
+          organization: {
+            include: { plan: true }
+          },
+          paymentVerifications: {
+            orderBy: { createdAt: 'desc' },
+            take: 1
+          }
+        }
       }),
       prisma.platformInvoice.count({ where })
     ]);

@@ -11,6 +11,10 @@ import { platformAuthRouter } from "./routes/platform/auth";
 import { platformAuthGuard } from "./middleware/platform-auth";
 import { platformSubscriptionsRouter } from "./routes/platform/subscriptions";
 import { platformBillingRouter } from "./routes/platform/billing";
+import { paymentVerificationRouter } from "./routes/platform/payment-verification";
+import { dashboardStatsRouter } from "./routes/platform/dashboard-stats";
+import { supportTicketsRouter } from "./routes/platform/support-tickets";
+import { plansRouter } from "./routes/platform/plans";
 
 // Tenant Routes
 import { customers } from "./routes/customers";
@@ -51,6 +55,14 @@ app.use("/api/platform/subscriptions", platformAuthGuard);
 app.route("/api/platform/subscriptions", platformSubscriptionsRouter);
 app.use("/api/platform/billing", platformAuthGuard);
 app.route("/api/platform/billing", platformBillingRouter);
+app.use("/api/platform/payment-verifications", platformAuthGuard);
+app.route("/api/platform/payment-verifications", paymentVerificationRouter);
+app.use("/api/platform/dashboard-stats", platformAuthGuard);
+app.route("/api/platform/dashboard-stats", dashboardStatsRouter);
+app.use("/api/platform/tickets", platformAuthGuard);
+app.route("/api/platform/tickets", supportTicketsRouter);
+app.use("/api/platform/plans", platformAuthGuard);
+app.route("/api/platform/plans", plansRouter);
 
 // --- AUTH ROUTE ---
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));

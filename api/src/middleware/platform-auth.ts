@@ -12,5 +12,6 @@ export const platformAuthGuard = async (c: Context, next: Next) => {
     return c.json({ error: 'Unauthorized - Invalid token' }, 401);
   }
   c.set('platformAdmin', payload);
+  c.set('platformAdminId', payload.sub);
   await next();
 };

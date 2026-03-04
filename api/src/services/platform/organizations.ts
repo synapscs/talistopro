@@ -231,4 +231,64 @@ export const PlatformOrganizationsService = {
             trackedUsage: memberCount + orderCount
         };
     },
+
+    async updateOrganizationSettings(id: string, data: {
+        n8nEnabled?: boolean;
+        n8nWebhookUrl?: string;
+        n8nEndpointId?: string;
+        whatsappEnabled?: boolean;
+        evolutionInstance?: string;
+        evolutionApiKey?: string;
+        evolutionApiToken?: string;
+        evolutionUrl?: string;
+    }) {
+        const org = await prisma.organization.findUnique({
+            where: { id }
+        });
+
+        if (!org) {
+            throw new HTTPException(404, { message: 'Organización no encontrada' });
+        }
+
+        const existingSettings = await prisma.organizationSettings.findUnique({
+            where: { organizationId: id }
+        });
+
+        if (!existingSettings) {
+            await prisma.organizationSettings.create({
+                data: {
+                    organizationId: id,
+                    n8nEnabled: data.n8nEnabled ?? false,
+                    n8nWebhookUrl: data.n8nWebhookUrl,
+                    n8nEndpointId: data.n8nEndpointId,
+                    whatsappEnabled: data.whatsappEnabled ?? false,
+                    evolutionInstance: data.evolutionInstance,
+                    evolutionApiKey: data.evolutionApiKey,
+                    evolutionApiToken: data.evolutionApiToken,
+                    evolutionUrl: data.evolutionUrl
+                }
+            });
+        } else {
+            await prisma.organizationSettings.update({
+                where: { organizationId: id },
+                data: {
+                    n8nEnabled: data.n8nEnabled,
+                    n8nWebhookUrl: data.n8nWebhookUrl,
+                    n8nEndpointId: data.n8nEndpointId,
+                    whatsappEnabled: data.whatsappEnabled,
+                    evolutionInstance: data.evolutionInstance,
+                    evolutionApiKey: data.evolutionApiKey,
+                    evolutionApiToken: data.evolutionApiToken,
+                    evolutionUrl: data.evolutionUrl
+                }
+            });
+        }
+
+        const updatedOrg = await prisma.organization.findUnique({
+            where: { id },
+            include: { settings: true }
+        });
+
+        return updatedOrg;
+    },
 };

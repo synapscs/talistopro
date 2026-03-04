@@ -23,6 +23,11 @@ export type AppEnv = {
             userId: string;
             activeOrganizationId: string | null;
         };
+        platformAdmin?: {
+            email: string;
+            sub: string;
+        };
+        platformAdminId?: string;
     };
 };
 

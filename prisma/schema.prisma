@@ -125,6 +125,8 @@ model Organization {
   webhookLogs      WebhookLog[]
   notificationLogs NotificationLog[]
   auditLogs        AuditLog[]
+  platformInvoices PlatformInvoice[]
+  supportTickets   SupportTicket[]
 
   @@map("organizations")
 }
@@ -1004,6 +1006,9 @@ model PlatformInvoice {
   id                String   @id @default(uuid(7))
   invoiceNumber     String   @unique @map("invoice_number") // "SAAS-2024-0001"
   
+  organizationId    String   @map("organization_id")
+  organization      Organization @relation(fields: [organizationId], references: [id])
+  
   subscriptionId    String   @map("subscription_id")
   
   // Montos (USD)
@@ -1025,11 +1030,53 @@ model PlatformInvoice {
   // Detalles
   description       String?
   
+  // Relación con verificaciones de pago
+  paymentVerifications PaymentVerification[]
+  
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
   
   @@unique([subscriptionId, invoiceNumber])
   @@map("platform_invoices")
+}
+
+// ==========================================
+// VERIFICACIÓN DE PAGOS (PLATFORM)
+// ==========================================
+
+model PaymentVerification {
+  id                String   @id @default(uuid(7))
+  
+  // Referencia a la factura de plataforma
+  platformInvoiceId String @map("platform_invoice_id")
+  platformInvoice   PlatformInvoice @relation(fields: [platformInvoiceId], references: [id])
+  
+  // Datos del pago reportado
+  paymentMethod     String @map("payment_method") // "transfer", "zelle", "cash", "card", "mobile_payment"
+  amount            Decimal @db.Decimal(10, 2)
+  currency          Currency
+  exchangeRate      Decimal? @map("exchange_rate") @db.Decimal(10, 2)
+  
+  // Referencia/Comprobante
+  referenceNumber   String? @map("reference_number")
+  receiptUrl        String? @map("receipt_url")
+  
+  // Estado de verificación
+  status            String @default("pending") // "pending", "verified", "rejected"
+  verifiedById      String? @map("verified_by_id")
+  verifiedBy        PlatformAdmin? @relation(fields: [verifiedById], references: [id])
+  verifiedAt        DateTime? @map("verified_at")
+  rejectionReason   String? @map("rejection_reason")
+  
+  // Notas
+  notes             String?
+  
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  
+  @@index([platformInvoiceId])
+  @@index([status])
+  @@map("payment_verifications")
 }
 
 // ==========================================
@@ -1044,10 +1091,54 @@ model PlatformAdmin {
   role      String   @default("admin") // "admin", "support"
   permissions Json?   // Permisos granulares
   
+  // Relación con verificaciones de pago
+  paymentVerifications PaymentVerification[]
+  
+  // Tickets asignados
+  assignedTickets SupportTicket[] @relation("TicketAssignee")
+  
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   
   @@map("platform_admins")
+}
+
+// ==========================================
+// TICKETS DE SOPORTE (PLATFORM)
+// ==========================================
+
+model SupportTicket {
+  id              String   @id @default(uuid(7))
+  
+  // Organización que crea el ticket
+  organizationId  String   @map("organization_id")
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  // Datos del ticket
+  subject         String
+  description     String   @db.Text
+  category        String   @default("other") // "technical", "billing", "other"
+  priority        String   @default("normal") // "low", "normal", "high", "urgent"
+  status          String   @default("open") // "open", "in_progress", "resolved", "closed"
+  
+  // Asignación
+  assignedToId    String?  @map("assigned_to_id")
+  assignedTo      PlatformAdmin? @relation("TicketAssignee", fields: [assignedToId], references: [id])
+  assignedAt      DateTime? @map("assigned_at")
+  
+  // Resolución
+  resolution      String?  @db.Text
+  resolvedAt      DateTime? @map("resolved_at")
+  closedAt        DateTime? @map("closed_at")
+  
+  // Timestamps
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  @@index([organizationId, status])
+  @@index([status, priority])
+  @@index([assignedToId])
+  @@map("support_tickets")
 }
 
 // ==========================================
